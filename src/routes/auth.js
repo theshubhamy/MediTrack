@@ -8,6 +8,26 @@ const { getRoleRedirect } = require('../utils/roles');
 const { Op } = require('sequelize');
 
 /**
+ * GET /
+ * Home page - redirects logged-in users, shows landing page for others
+ */
+router.get('/', (req, res) => {
+  // Redirect logged-in users to their dashboards
+  if (req.session.user) {
+    return res.redirect('/dashboard');
+  }
+  if (req.session.admin) {
+    return res.redirect('/admin');
+  }
+
+  // Show landing page for non-authenticated users
+  res.render('home', {
+    title: 'Home',
+    layout: 'layouts/main',
+  });
+});
+
+/**
  * GET /login
  * Show login page
  */
