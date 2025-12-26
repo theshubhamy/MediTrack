@@ -24,8 +24,7 @@ app.use(cookieParser());
 
 // Session configuration
 const sessionConfig = {
-  secret:
-    process.env.SESSION_SECRET || 'your-super-secret-session-key-change-this',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {

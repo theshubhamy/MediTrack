@@ -25,28 +25,6 @@ function createSequelize() {
       },
     });
   }
-
-  // Fallback (non-URL)
-  // Default to localhost for local development, postgres for Docker
-  const defaultHost = process.env.NODE_ENV === 'production' || process.env.DOCKER_ENV ? 'postgres' : 'localhost';
-
-  return new Sequelize(
-    process.env.POSTGRES_DB || process.env.DB_NAME || 'meditrack',
-    process.env.POSTGRES_USER || process.env.DB_USER || 'meditrack',
-    process.env.POSTGRES_PASSWORD || process.env.DB_PASSWORD || 'meditrack_password',
-    {
-      host: process.env.DB_HOST || defaultHost,
-      port: process.env.DB_PORT || 5432,
-      dialect: 'postgres',
-      logging: process.env.NODE_ENV === 'development' ? console.log : false,
-      pool: {
-        max: 5,
-        min: 0,
-        acquire: 30000,
-        idle: 10000,
-      },
-    },
-  );
 }
 
 const sequelize = createSequelize();
@@ -59,10 +37,8 @@ let connectionTested = false;
   connectionTested = true;
 
   try {
-    await sequelize.authenticate();
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('✅ Database connected');
-    }
+    const result = await sequelize.authenticate();
+    console.log('✅ Database connected successfully:', result);
   } catch (err) {
     console.error('❌ Database connection failed:', err.message);
     // Only exit if this is the main app, not if imported by scripts

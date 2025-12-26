@@ -10,6 +10,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgresdata:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
     networks:
       - meditrack-network
     healthcheck:
@@ -29,6 +31,8 @@ services:
       --requirepass ${REDIS_PASSWORD}
     volumes:
       - redisdata:/data
+    ports:
+      - '6379:6379'
     networks:
       - meditrack-network
     healthcheck:
