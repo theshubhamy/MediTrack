@@ -37,8 +37,8 @@ let connectionTested = false;
   connectionTested = true;
 
   try {
-    const result = await sequelize.authenticate();
-    console.log('✅ Database connected successfully:', result);
+    await sequelize.authenticate();
+    console.log('✅ Database connected successfully');
   } catch (err) {
     console.error('❌ Database connection failed:', err.message);
     // Only exit if this is the main app, not if imported by scripts
