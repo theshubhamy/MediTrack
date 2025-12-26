@@ -120,7 +120,7 @@ app.use((err, req, res, next) => {
     title: 'Server Error',
     layout: 'layouts/main',
     error: process.env.NODE_ENV === 'development' ? err : {},
-    NODE_ENV: process.env.NODE_ENV,
+    NODE_ENV: process.env.NODE_ENV || 'production',
   });
 });
 

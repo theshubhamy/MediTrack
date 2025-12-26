@@ -20,7 +20,7 @@ router.get('/login', (req, res) => {
   }
   res.render('auth/login', {
     title: 'Login',
-    layout: 'layouts/auth'
+    layout: 'layouts/auth',
   });
 });
 
@@ -37,7 +37,7 @@ router.get('/admin/login', (req, res) => {
   }
   res.render('admin/login', {
     title: 'Admin Login',
-    layout: 'layouts/auth'
+    layout: 'layouts/auth',
   });
 });
 
@@ -51,14 +51,14 @@ router.post('/admin/login', validateLogin, async (req, res) => {
 
     // Find admin
     const admin = await Admin.findOne({
-      where: { email }
+      where: { email },
     });
 
     if (!admin) {
       return res.render('admin/login', {
         title: 'Admin Login',
         layout: 'layouts/auth',
-        error: 'Invalid email or password'
+        error: 'Invalid email or password',
       });
     }
 
@@ -68,7 +68,7 @@ router.post('/admin/login', validateLogin, async (req, res) => {
       return res.render('admin/login', {
         title: 'Admin Login',
         layout: 'layouts/auth',
-        error: 'Invalid email or password'
+        error: 'Invalid email or password',
       });
     }
 
@@ -77,30 +77,48 @@ router.post('/admin/login', validateLogin, async (req, res) => {
       return res.render('admin/login', {
         title: 'Admin Login',
         layout: 'layouts/auth',
-        error: 'Your account is not active. Please contact support.'
+        error: 'Your account is not active. Please contact support.',
       });
     }
 
-    // Create session
-    req.session.admin = {
+    // Store admin data before session regeneration
+    const adminData = {
       id: admin.id,
       name: admin.name,
-      email: admin.email
+      email: admin.email,
     };
 
-    // Regenerate session ID for security
-    req.session.regenerate((err) => {
+    // Regenerate session ID for security, then set admin data
+    req.session.regenerate(err => {
       if (err) {
         console.error('Session regeneration error:', err);
+        return res.render('admin/login', {
+          title: 'Admin Login',
+          layout: 'layouts/auth',
+          error: 'An error occurred. Please try again.',
+        });
       }
-      res.redirect('/admin');
+
+      // Set admin data on new session
+      req.session.admin = adminData;
+      req.session.save(saveErr => {
+        if (saveErr) {
+          console.error('Session save error:', saveErr);
+          return res.render('admin/login', {
+            title: 'Admin Login',
+            layout: 'layouts/auth',
+            error: 'An error occurred. Please try again.',
+          });
+        }
+        res.redirect('/admin');
+      });
     });
   } catch (error) {
     console.error('Admin login error:', error);
     res.render('admin/login', {
       title: 'Admin Login',
       layout: 'layouts/auth',
-      error: 'An error occurred. Please try again.'
+      error: 'An error occurred. Please try again.',
     });
   }
 });
@@ -116,17 +134,19 @@ router.post('/login', validateLogin, async (req, res) => {
     // Find user with clinic information
     const user = await User.findOne({
       where: { email },
-      include: [{
-        model: Clinic,
-        as: 'clinic'
-      }]
+      include: [
+        {
+          model: Clinic,
+          as: 'clinic',
+        },
+      ],
     });
 
     if (!user) {
       return res.render('auth/login', {
         title: 'Login',
         layout: 'layouts/auth',
-        error: 'Invalid email or password'
+        error: 'Invalid email or password',
       });
     }
 
@@ -136,7 +156,7 @@ router.post('/login', validateLogin, async (req, res) => {
       return res.render('auth/login', {
         title: 'Login',
         layout: 'layouts/auth',
-        error: 'Invalid email or password'
+        error: 'Invalid email or password',
       });
     }
 
@@ -145,39 +165,58 @@ router.post('/login', validateLogin, async (req, res) => {
       return res.render('auth/login', {
         title: 'Login',
         layout: 'layouts/auth',
-        error: 'Your account is not active. Please contact your administrator.'
+        error: 'Your account is not active. Please contact your administrator.',
       });
     }
 
-    // Create session
-    req.session.user = {
+    // Store user and clinic data before session regeneration
+    const userData = {
       id: user.id,
       clinicId: user.clinicId,
       name: user.name,
       email: user.email,
-      role: user.role
+      role: user.role,
     };
 
-    req.session.clinic = {
+    const clinicData = {
       id: user.clinic.id,
-      name: user.clinic.name
+      name: user.clinic.name,
     };
 
-    // Regenerate session ID for security
-    req.session.regenerate((err) => {
+    // Regenerate session ID for security, then set user data
+    req.session.regenerate(err => {
       if (err) {
         console.error('Session regeneration error:', err);
+        return res.render('auth/login', {
+          title: 'Login',
+          layout: 'layouts/auth',
+          error: 'An error occurred. Please try again.',
+        });
       }
-      // Redirect based on user role
-      const redirectUrl = getRoleRedirect(user.role);
-      res.redirect(redirectUrl);
+
+      // Set user and clinic data on new session
+      req.session.user = userData;
+      req.session.clinic = clinicData;
+      req.session.save(saveErr => {
+        if (saveErr) {
+          console.error('Session save error:', saveErr);
+          return res.render('auth/login', {
+            title: 'Login',
+            layout: 'layouts/auth',
+            error: 'An error occurred. Please try again.',
+          });
+        }
+        // Redirect based on user role
+        const redirectUrl = getRoleRedirect(user.role);
+        res.redirect(redirectUrl);
+      });
     });
   } catch (error) {
     console.error('Login error:', error);
     res.render('auth/login', {
       title: 'Login',
       layout: 'layouts/auth',
-      error: 'An error occurred. Please try again.'
+      error: 'An error occurred. Please try again.',
     });
   }
 });
@@ -187,7 +226,7 @@ router.post('/login', validateLogin, async (req, res) => {
  * Handle logout
  */
 router.post('/logout', requireAuth, (req, res) => {
-  req.session.destroy((err) => {
+  req.session.destroy(err => {
     if (err) {
       console.error('Logout error:', err);
     }
@@ -200,7 +239,7 @@ router.post('/logout', requireAuth, (req, res) => {
  * Handle logout (GET request for convenience)
  */
 router.get('/logout', (req, res) => {
-  req.session.destroy((err) => {
+  req.session.destroy(err => {
     if (err) {
       console.error('Logout error:', err);
     }
@@ -213,7 +252,7 @@ router.get('/logout', (req, res) => {
  * Handle admin logout
  */
 router.get('/admin/logout', (req, res) => {
-  req.session.destroy((err) => {
+  req.session.destroy(err => {
     if (err) {
       console.error('Logout error:', err);
     }

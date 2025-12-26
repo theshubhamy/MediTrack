@@ -10,62 +10,78 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label class="text-sm font-medium text-gray-500">Date</label>
-                    <p class="mt-1 text-gray-900"><%= new Date(visit.createdAt).toLocaleString() %></p>
+                    <p class="mt-1 text-gray-900">
+                        <%= new Date(visit.created_at).toLocaleString() %>
+                    </p>
                 </div>
                 <div>
                     <label class="text-sm font-medium text-gray-500">Patient</label>
                     <p class="mt-1">
-                        <a href="/patients/<%= visit.patient.id %>" class="text-blue-600 hover:text-blue-700"><%= visit.patient.name %></a>
+                        <a href="/patients/<%= visit.patient.id %>" class="text-blue-600 hover:text-blue-700">
+                            <%= visit.patient.name %>
+                        </a>
                     </p>
                 </div>
                 <div>
                     <label class="text-sm font-medium text-gray-500">Doctor</label>
-                    <p class="mt-1 text-gray-900"><%= visit.doctor.name %></p>
+                    <p class="mt-1 text-gray-900">
+                        <%= visit.doctor.name %>
+                    </p>
                 </div>
                 <% if (visit.nextVisitDate) { %>
-                <div>
-                    <label class="text-sm font-medium text-gray-500">Next Visit</label>
-                    <p class="mt-1 text-gray-900"><%= new Date(visit.nextVisitDate).toLocaleDateString() %></p>
-                </div>
-                <% } %>
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">Next Visit</label>
+                        <p class="mt-1 text-gray-900">
+                            <%= new Date(visit.nextVisitDate).toLocaleDateString() %>
+                        </p>
+                    </div>
+                    <% } %>
             </div>
         </div>
 
         <% if (visit.symptoms) { %>
-        <div class="card">
-            <h3 class="text-lg font-semibold text-gray-900 mb-3">Symptoms</h3>
-            <p class="text-gray-700 whitespace-pre-wrap"><%= visit.symptoms %></p>
-        </div>
-        <% } %>
-
-        <% if (visit.diagnosis) { %>
-        <div class="card">
-            <h3 class="text-lg font-semibold text-gray-900 mb-3">Diagnosis</h3>
-            <p class="text-gray-700 whitespace-pre-wrap"><%= visit.diagnosis %></p>
-        </div>
-        <% } %>
-
-        <% if (visit.notes) { %>
-        <div class="card">
-            <h3 class="text-lg font-semibold text-gray-900 mb-3">Notes</h3>
-            <p class="text-gray-700 whitespace-pre-wrap"><%= visit.notes %></p>
-        </div>
-        <% } %>
-
-        <% if (visit.prescription) { %>
-        <div class="card">
-            <h3 class="text-lg font-semibold text-gray-900 mb-3">Prescription</h3>
-            <div class="bg-gray-50 rounded-md p-4 mb-4">
-                <pre class="text-sm text-gray-800 whitespace-pre-wrap"><%= JSON.stringify(visit.prescription.medicines, null, 2) %></pre>
-            </div>
-            <% if (visit.prescription.advice) { %>
-            <div>
-                <strong class="text-gray-700">Advice:</strong>
-                <p class="text-gray-700 mt-1"><%= visit.prescription.advice %></p>
+            <div class="card">
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">Symptoms</h3>
+                <p class="text-gray-700 whitespace-pre-wrap">
+                    <%= visit.symptoms %>
+                </p>
             </div>
             <% } %>
-        </div>
-        <% } %>
+
+                <% if (visit.diagnosis) { %>
+                    <div class="card">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">Diagnosis</h3>
+                        <p class="text-gray-700 whitespace-pre-wrap">
+                            <%= visit.diagnosis %>
+                        </p>
+                    </div>
+                    <% } %>
+
+                        <% if (visit.notes) { %>
+                            <div class="card">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-3">Notes</h3>
+                                <p class="text-gray-700 whitespace-pre-wrap">
+                                    <%= visit.notes %>
+                                </p>
+                            </div>
+                            <% } %>
+
+                                <% if (visit.prescription) { %>
+                                    <div class="card">
+                                        <h3 class="text-lg font-semibold text-gray-900 mb-3">Prescription</h3>
+                                        <div class="bg-gray-50 rounded-md p-4 mb-4">
+                                            <pre
+                                                class="text-sm text-gray-800 whitespace-pre-wrap"><%= JSON.stringify(visit.prescription.medicines, null, 2) %></pre>
+                                        </div>
+                                        <% if (visit.prescription.advice) { %>
+                                            <div>
+                                                <strong class="text-gray-700">Advice:</strong>
+                                                <p class="text-gray-700 mt-1">
+                                                    <%= visit.prescription.advice %>
+                                                </p>
+                                            </div>
+                                            <% } %>
+                                    </div>
+                                    <% } %>
     </div>
 </div>
-

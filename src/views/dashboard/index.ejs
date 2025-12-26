@@ -1,32 +1,34 @@
 <div>
     <div class="mb-6">
         <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <% if (typeof userRole !== 'undefined') { %>
-        <p class="text-gray-600 mt-2">
-            <% if (userRole === 'CLINIC_ADMIN') { %>
-            Clinic Administrator Dashboard
-            <% } else if (userRole === 'DOCTOR') { %>
-            Doctor Dashboard - Your Visits
-            <% } else if (userRole === 'STAFF') { %>
-            Staff Dashboard
-            <% } else if (userRole === 'READ_ONLY') { %>
-            Read-Only Dashboard
+        <% if (typeof userRole !=='undefined' ) { %>
+            <p class="text-gray-600 mt-2">
+                <% if (userRole==='CLINIC_ADMIN' ) { %>
+                    Clinic Administrator Dashboard
+                    <% } else if (userRole==='DOCTOR' ) { %>
+                        Doctor Dashboard - Your Visits
+                        <% } else if (userRole==='STAFF' ) { %>
+                            Staff Dashboard
+                            <% } else if (userRole==='READ_ONLY' ) { %>
+                                Read-Only Dashboard
+                                <% } %>
+            </p>
             <% } %>
-        </p>
-        <% } %>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="stat-card">
             <div class="text-4xl">👥</div>
             <div>
-                <h3 class="text-3xl font-bold text-gray-900"><%= stats.totalPatients %></h3>
+                <h3 class="text-3xl font-bold text-gray-900">
+                    <%= stats.totalPatients %>
+                </h3>
                 <p class="text-gray-600 text-sm">
-                    <% if (typeof canViewAll !== 'undefined' && canViewAll) { %>
-                    Total Patients
-                    <% } else { %>
-                    Patients
-                    <% } %>
+                    <% if (typeof canViewAll !=='undefined' && canViewAll) { %>
+                        Total Patients
+                        <% } else { %>
+                            Patients
+                            <% } %>
                 </p>
             </div>
         </div>
@@ -34,89 +36,114 @@
         <div class="stat-card">
             <div class="text-4xl">📋</div>
             <div>
-                <h3 class="text-3xl font-bold text-gray-900"><%= stats.totalVisits %></h3>
+                <h3 class="text-3xl font-bold text-gray-900">
+                    <%= stats.totalVisits %>
+                </h3>
                 <p class="text-gray-600 text-sm">
-                    <% if (typeof canViewAll !== 'undefined' && canViewAll) { %>
-                    Total Visits
-                    <% } else { %>
-                    My Visits
-                    <% } %>
+                    <% if (typeof canViewAll !=='undefined' && canViewAll) { %>
+                        Total Visits
+                        <% } else { %>
+                            My Visits
+                            <% } %>
                 </p>
             </div>
         </div>
 
-        <% if (typeof stats.totalDoctors !== 'undefined' && stats.totalDoctors !== null) { %>
-        <div class="stat-card">
-            <div class="text-4xl">👨‍⚕️</div>
-            <div>
-                <h3 class="text-3xl font-bold text-gray-900"><%= stats.totalDoctors %></h3>
-                <p class="text-gray-600 text-sm">Active Doctors</p>
+        <% if (typeof stats.totalDoctors !=='undefined' && stats.totalDoctors !==null) { %>
+            <div class="stat-card">
+                <div class="text-4xl">👨‍⚕️</div>
+                <div>
+                    <h3 class="text-3xl font-bold text-gray-900">
+                        <%= stats.totalDoctors %>
+                    </h3>
+                    <p class="text-gray-600 text-sm">Active Doctors</p>
+                </div>
             </div>
-        </div>
-        <% } else if (typeof stats.myVisitsCount !== 'undefined' && stats.myVisitsCount !== null) { %>
-        <div class="stat-card">
-            <div class="text-4xl">📊</div>
-            <div>
-                <h3 class="text-3xl font-bold text-gray-900"><%= stats.myVisitsCount %></h3>
-                <p class="text-gray-600 text-sm">All My Visits</p>
-            </div>
-        </div>
-        <% } else { %>
-        <div class="stat-card">
-            <div class="text-4xl">📊</div>
-            <div>
-                <h3 class="text-3xl font-bold text-gray-900">-</h3>
-                <p class="text-gray-600 text-sm">Statistics</p>
-            </div>
-        </div>
-        <% } %>
+            <% } else if (typeof stats.myVisitsCount !=='undefined' && stats.myVisitsCount !==null) { %>
+                <div class="stat-card">
+                    <div class="text-4xl">📊</div>
+                    <div>
+                        <h3 class="text-3xl font-bold text-gray-900">
+                            <%= stats.myVisitsCount %>
+                        </h3>
+                        <p class="text-gray-600 text-sm">All My Visits</p>
+                    </div>
+                </div>
+                <% } else { %>
+                    <div class="stat-card">
+                        <div class="text-4xl">📊</div>
+                        <div>
+                            <h3 class="text-3xl font-bold text-gray-900">-</h3>
+                            <p class="text-gray-600 text-sm">Statistics</p>
+                        </div>
+                    </div>
+                    <% } %>
     </div>
 
     <div class="card">
         <h2 class="text-2xl font-bold text-gray-900 mb-6">Recent Visits</h2>
-        <% if (recentVisits.length === 0) { %>
-        <div class="empty-state">
-            <p>
-                <% if (typeof userRole !== 'undefined' && (userRole === 'READ_ONLY')) { %>
-                No visits found.
-                <% } else { %>
-                No visits yet.
-                <% if (typeof canCreateVisits !== 'undefined' && canCreateVisits()) { %>
-                <a href="/patients" class="text-blue-600 hover:text-blue-700">Add a patient</a> to get started.
+        <% if (recentVisits.length===0) { %>
+            <div class="empty-state">
+                <p>
+                    <% if (typeof userRole !=='undefined' && (userRole==='READ_ONLY' )) { %>
+                        No visits found.
+                        <% } else { %>
+                            No visits yet.
+                            <% if (typeof canCreateVisits !=='undefined' && canCreateVisits()) { %>
+                                <a href="/patients" class="text-blue-600 hover:text-blue-700">Add a patient</a> to get
+                                started.
+                                <% } %>
+                                    <% } %>
+                </p>
+            </div>
+            <% } else { %>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Date</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Patient</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Doctor</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Diagnosis</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <% recentVisits.forEach(visit=> { %>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <%= new Date(visit.created_at).toLocaleDateString() %>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <a href="/patients/<%= visit.patient.id %>"
+                                            class="text-blue-600 hover:text-blue-700">
+                                            <%= visit.patient.name %>
+                                        </a>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <%= visit.doctor.name %>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">
+                                        <%= visit.diagnosis ? visit.diagnosis.substring(0, 50) + '...' : '-' %>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <a href="/visits/<%= visit.id %>" class="btn btn-sm">View</a>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                        </tbody>
+                    </table>
+                </div>
                 <% } %>
-                <% } %>
-            </p>
-        </div>
-        <% } else { %>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doctor</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Diagnosis</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    <% recentVisits.forEach(visit => { %>
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><%= new Date(visit.createdAt).toLocaleDateString() %></td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">
-                            <a href="/patients/<%= visit.patient.id %>" class="text-blue-600 hover:text-blue-700"><%= visit.patient.name %></a>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><%= visit.doctor.name %></td>
-                        <td class="px-6 py-4 text-sm text-gray-500"><%= visit.diagnosis ? visit.diagnosis.substring(0, 50) + '...' : '-' %></td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">
-                            <a href="/visits/<%= visit.id %>" class="btn btn-sm">View</a>
-                        </td>
-                    </tr>
-                    <% }); %>
-                </tbody>
-            </table>
-        </div>
-        <% } %>
     </div>
 </div>
-

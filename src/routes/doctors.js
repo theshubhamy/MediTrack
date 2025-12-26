@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { User } = require('../models');
-const { requireAuth, requireClinicAccess, requireRole } = require('../middlewares/auth');
+const {
+  requireAuth,
+  requireClinicAccess,
+  requireRole,
+} = require('../middlewares/auth');
 const { Op } = require('sequelize');
 
 /**
@@ -16,22 +20,26 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
       where: {
         clinicId,
         role: { [Op.in]: ['DOCTOR', 'CLINIC_ADMIN'] },
-        status: 'ACTIVE'
+        status: 'ACTIVE',
       },
-      attributes: ['id', 'name', 'email', 'phone', 'role', 'createdAt'],
-      order: [['createdAt', 'DESC']]
+      attributes: ['id', 'name', 'email', 'phone', 'role', 'created_at'],
+      order: [['created_at', 'DESC']],
     });
+    console.log(
+      'doctors',
+      doctors.map(doctor => new Date(doctor.createdAt).toLocaleString()),
+    );
 
     res.render('doctors/index', {
       title: 'Doctors',
-      doctors
+      doctors,
     });
   } catch (error) {
     console.error('Doctors list error:', error);
     res.status(500).render('errors/500', {
       title: 'Server Error',
       layout: 'layouts/main',
-      error: process.env.NODE_ENV === 'development' ? error : {}
+      error: process.env.NODE_ENV === 'development' ? error : {},
     });
   }
 });
@@ -40,32 +48,44 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
  * GET /doctors/invite
  * Show invite doctor form (only for clinic admins)
  */
-router.get('/invite', requireAuth, requireClinicAccess, requireRole('CLINIC_ADMIN'), (req, res) => {
-  res.render('doctors/invite', {
-    title: 'Invite Doctor'
-  });
-});
+router.get(
+  '/invite',
+  requireAuth,
+  requireClinicAccess,
+  requireRole('CLINIC_ADMIN'),
+  (req, res) => {
+    res.render('doctors/invite', {
+      title: 'Invite Doctor',
+    });
+  },
+);
 
 /**
  * POST /doctors/invite
  * Invite new doctor (only for clinic admins)
  */
-router.post('/invite', requireAuth, requireClinicAccess, requireRole('CLINIC_ADMIN'), async (req, res) => {
-  try {
-    // TODO: Implement doctor invitation logic
-    // This would typically involve:
-    // 1. Creating a user account
-    // 2. Sending invitation email
-    // 3. Setting up temporary password
+router.post(
+  '/invite',
+  requireAuth,
+  requireClinicAccess,
+  requireRole('CLINIC_ADMIN'),
+  async (req, res) => {
+    try {
+      // TODO: Implement doctor invitation logic
+      // This would typically involve:
+      // 1. Creating a user account
+      // 2. Sending invitation email
+      // 3. Setting up temporary password
 
-    res.redirect('/doctors');
-  } catch (error) {
-    console.error('Invite doctor error:', error);
-    res.render('doctors/invite', {
-      title: 'Invite Doctor',
-      error: 'Failed to invite doctor. Please try again.'
-    });
-  }
-});
+      res.redirect('/doctors');
+    } catch (error) {
+      console.error('Invite doctor error:', error);
+      res.render('doctors/invite', {
+        title: 'Invite Doctor',
+        error: 'Failed to invite doctor. Please try again.',
+      });
+    }
+  },
+);
 
 module.exports = router;

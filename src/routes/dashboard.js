@@ -53,7 +53,7 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
     const recentVisits = await Visit.findAll({
       where: visitWhere,
       limit: 10,
-      order: [['createdAt', 'DESC']],
+      order: [['created_at', 'DESC']],
       include: [
         {
           model: Patient,

@@ -10,25 +10,53 @@ const File = require('./File')(sequelize);
 const Admin = require('./Admin')(sequelize);
 
 // Define associations
-Clinic.hasMany(User, { foreignKey: 'clinicId', as: 'users', onDelete: 'CASCADE' });
+Clinic.hasMany(User, {
+  foreignKey: 'clinicId',
+  as: 'users',
+  onDelete: 'CASCADE',
+});
 User.belongsTo(Clinic, { foreignKey: 'clinicId', as: 'clinic' });
 
-Clinic.hasMany(Patient, { foreignKey: 'clinicId', as: 'patients', onDelete: 'CASCADE' });
+Clinic.hasMany(Patient, {
+  foreignKey: 'clinicId',
+  as: 'patients',
+  onDelete: 'CASCADE',
+});
 Patient.belongsTo(Clinic, { foreignKey: 'clinicId', as: 'clinic' });
 
-Clinic.hasMany(Visit, { foreignKey: 'clinicId', as: 'visits', onDelete: 'CASCADE' });
+Clinic.hasMany(Visit, {
+  foreignKey: 'clinicId',
+  as: 'visits',
+  onDelete: 'CASCADE',
+});
 Visit.belongsTo(Clinic, { foreignKey: 'clinicId', as: 'clinic' });
 
-Patient.hasMany(Visit, { foreignKey: 'patientId', as: 'visits', onDelete: 'CASCADE' });
+Patient.hasMany(Visit, {
+  foreignKey: 'patientId',
+  as: 'visits',
+  onDelete: 'CASCADE',
+});
 Visit.belongsTo(Patient, { foreignKey: 'patientId', as: 'patient' });
 
-User.hasMany(Visit, { foreignKey: 'doctorId', as: 'visits', onDelete: 'RESTRICT' });
+User.hasMany(Visit, {
+  foreignKey: 'doctorId',
+  as: 'visits',
+  onDelete: 'RESTRICT',
+});
 Visit.belongsTo(User, { foreignKey: 'doctorId', as: 'doctor' });
 
-Visit.hasOne(Prescription, { foreignKey: 'visitId', as: 'prescription', onDelete: 'CASCADE' });
+Visit.hasOne(Prescription, {
+  foreignKey: 'visitId',
+  as: 'prescription',
+  onDelete: 'CASCADE',
+});
 Prescription.belongsTo(Visit, { foreignKey: 'visitId', as: 'visit' });
 
-Visit.hasMany(File, { foreignKey: 'visitId', as: 'files', onDelete: 'CASCADE' });
+Visit.hasMany(File, {
+  foreignKey: 'visitId',
+  as: 'files',
+  onDelete: 'CASCADE',
+});
 File.belongsTo(Visit, { foreignKey: 'visitId', as: 'visit' });
 
 module.exports = {
@@ -39,6 +67,5 @@ module.exports = {
   Visit,
   Prescription,
   File,
-  Admin
+  Admin,
 };
-
