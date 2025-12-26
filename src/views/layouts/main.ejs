@@ -1,56 +1,142 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= typeof title !== 'undefined' ? title + ' - MediTrack' : 'MediTrack' %></title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
-<body class="bg-gray-50 min-h-screen flex flex-col">
-    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex-shrink-0">
-                    <a href="/dashboard" class="text-2xl font-bold text-blue-600 hover:text-blue-700">🏥 MediTrack</a>
-                </div>
-                <% if (typeof user !== 'undefined' && user) { %>
-                <div class="flex items-center space-x-6">
-                    <a href="/dashboard" class="text-gray-700 hover:text-blue-600 transition-colors">Dashboard</a>
-                    <a href="/patients" class="text-gray-700 hover:text-blue-600 transition-colors">Patients</a>
-                    <% if (user.role === 'CLINIC_ADMIN' || user.role === 'STAFF') { %>
-                    <a href="/doctors" class="text-gray-700 hover:text-blue-600 transition-colors">Doctors</a>
-                    <% } %>
-                    <% if (user.role === 'CLINIC_ADMIN') { %>
-                    <a href="/settings" class="text-gray-700 hover:text-blue-600 transition-colors">Settings</a>
-                    <% } %>
-                    <div class="flex items-center space-x-3">
-                        <span class="text-sm text-gray-500">
-                            <%= user.name %>
-                            <span class="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                                <%= user.role.replace('_', ' ') %>
-                            </span>
-                        </span>
-                        <a href="/logout" class="btn btn-sm bg-red-600 hover:bg-red-700 text-white">Logout</a>
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>
+            <%= typeof title !=='undefined' ? title + ' - MediTrack' : 'MediTrack' %>
+        </title>
+        <link rel="stylesheet" href="/css/style.css">
+    </head>
+
+    <body class="bg-gray-50 min-h-screen flex">
+        <% if (typeof user !=='undefined' && user) { %>
+            <!-- Sidebar -->
+            <aside class="w-64 bg-white border-r border-gray-200 fixed h-full z-40">
+                <div class="flex flex-col h-full">
+                    <!-- Logo -->
+                    <div class="p-6 border-b border-gray-200">
+                        <a href="/dashboard" class="text-2xl font-bold text-blue-600 hover:text-blue-700">🏥
+                            MediTrack</a>
+                    </div>
+
+                    <!-- Navigation -->
+                    <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                        <a href="/dashboard"
+                            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors <%= typeof title !== 'undefined' && title === 'Dashboard' ? 'bg-blue-50 text-blue-600' : '' %>">
+                            <span class="mr-3">📊</span>
+                            <span>Dashboard</span>
+                        </a>
+                        <a href="/patients"
+                            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors <%= typeof title !== 'undefined' && title.includes('Patient') ? 'bg-blue-50 text-blue-600' : '' %>">
+                            <span class="mr-3">👥</span>
+                            <span>Patients</span>
+                        </a>
+                        <% if (user.role==='CLINIC_ADMIN' || user.role==='STAFF' ) { %>
+                            <a href="/doctors"
+                                class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors <%= typeof title !== 'undefined' && title.includes('Doctor') ? 'bg-blue-50 text-blue-600' : '' %>">
+                                <span class="mr-3">👨‍⚕️</span>
+                                <span>Doctors</span>
+                            </a>
+                            <% } %>
+                                <% if (user.role==='CLINIC_ADMIN' ) { %>
+                                    <a href="/settings"
+                                        class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors <%= typeof title !== 'undefined' && title.includes('Settings') ? 'bg-blue-50 text-blue-600' : '' %>">
+                                        <span class="mr-3">⚙️</span>
+                                        <span>Settings</span>
+                                    </a>
+                                    <% } %>
+                    </nav>
+
+                    <!-- User Info -->
+                    <div class="p-4 border-t border-gray-200">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <span class="text-blue-600 font-semibold">
+                                        <%= user.name.charAt(0).toUpperCase() %>
+                                    </span>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-gray-900">
+                                        <%= user.name %>
+                                    </p>
+                                    <p class="text-xs text-gray-500">
+                                        <%= user.role.replace('_', ' ' ) %>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="/logout"
+                            class="block w-full text-center px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors">
+                            Logout
+                        </a>
                     </div>
                 </div>
-                <% } %>
+            </aside>
+
+            <!-- Main Content -->
+            <div class="flex-1 ml-64">
+                <!-- Top Navbar -->
+                <nav class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+                    <div class="px-6 py-4">
+                        <h1 class="text-2xl font-bold text-gray-900">
+                            <%= typeof title !=='undefined' ? title : 'Dashboard' %>
+                        </h1>
+                        <% if (typeof clinic !=='undefined' && clinic) { %>
+                            <p class="text-sm text-gray-500 mt-1">
+                                <%= clinic.name %>
+                            </p>
+                            <% } %>
+                    </div>
+                </nav>
+
+                <!-- Page Content -->
+                <main class="p-6 min-h-screen">
+                    <%- body %>
+                </main>
+
+                <!-- Footer -->
+                <footer class="bg-white border-t border-gray-200 mt-auto">
+                    <div class="px-6 py-4">
+                        <p class="text-center text-gray-500 text-sm">&copy; <%= new Date().getFullYear() %> MediTrack.
+                                All
+                                rights reserved.</p>
+                    </div>
+                </footer>
             </div>
-        </div>
-    </nav>
+            <% } else { %>
+                <!-- No sidebar for non-authenticated users -->
+                <div class="flex-1">
+                    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div class="flex justify-between items-center h-16">
+                                <div class="flex-shrink-0">
+                                    <a href="/" class="text-2xl font-bold text-blue-600 hover:text-blue-700">🏥
+                                        MediTrack</a>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
 
-    <main class="flex-1 py-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <%- body %>
-        </div>
-    </main>
+                    <main class="flex-1 py-8 min-h-screen">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <%- body %>
+                        </div>
+                    </main>
 
-    <footer class="bg-white border-t border-gray-200 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <p class="text-center text-gray-500 text-sm">&copy; <%= new Date().getFullYear() %> MediTrack. All rights reserved.</p>
-        </div>
-    </footer>
+                    <footer class="bg-white border-t border-gray-200 mt-auto">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                            <p class="text-center text-gray-500 text-sm">&copy; <%= new Date().getFullYear() %>
+                                    MediTrack. All
+                                    rights reserved.</p>
+                        </div>
+                    </footer>
+                </div>
+                <% } %>
 
-    <script src="/js/main.js"></script>
-</body>
+                    <script src="/js/main.js"></script>
+    </body>
+
 </html>
-

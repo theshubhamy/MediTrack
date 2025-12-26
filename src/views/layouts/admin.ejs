@@ -1,50 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= typeof title !== 'undefined' ? title + ' - MediTrack Admin' : 'MediTrack Admin' %></title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
-<body class="bg-gray-50 min-h-screen flex flex-col">
-    <nav class="bg-purple-600 border-b border-purple-700 sticky top-0 z-50 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex-shrink-0">
-                    <a href="/admin" class="text-2xl font-bold text-white hover:text-purple-100">🏥 MediTrack Admin</a>
-                </div>
-                <% if (typeof admin !== 'undefined' && admin) { %>
-                <div class="flex items-center space-x-6">
-                    <a href="/admin" class="text-purple-100 hover:text-white transition-colors">Dashboard</a>
-                    <a href="/admin/clinics" class="text-purple-100 hover:text-white transition-colors">Clinics</a>
-                    <div class="flex items-center space-x-3">
-                        <span class="text-sm text-purple-100">
-                            <%= admin.name %>
-                            <span class="ml-2 px-2 py-1 text-xs bg-purple-700 text-white rounded-full">
-                                ADMIN
-                            </span>
-                        </span>
-                        <a href="/admin/logout" class="btn btn-sm bg-red-600 hover:bg-red-700 text-white">Logout</a>
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>
+            <%= typeof title !=='undefined' ? title + ' - MediTrack Admin' : 'MediTrack Admin' %>
+        </title>
+        <link rel="stylesheet" href="/css/style.css">
+    </head>
+
+    <body class="bg-gray-50 min-h-screen flex">
+        <% if (typeof admin !=='undefined' && admin) { %>
+            <!-- Sidebar -->
+            <aside class="w-64 bg-white border-r border-gray-200 fixed h-full z-40">
+                <div class="flex flex-col h-full">
+                    <!-- Logo -->
+                    <div class="p-6 border-b border-gray-200">
+                        <a href="/admin" class="text-2xl font-bold text-blue-600 hover:text-blue-700">🏥 MediTrack
+                            Admin</a>
+                    </div>
+
+                    <!-- Navigation -->
+                    <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                        <a href="/admin"
+                            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors <%= typeof title !== 'undefined' && title === 'Admin Dashboard' ? 'bg-blue-50 text-blue-600' : '' %>">
+                            <span class="mr-3">📊</span>
+                            <span>Dashboard</span>
+                        </a>
+                        <a href="/admin/clinics"
+                            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors <%= typeof title !== 'undefined' && title.includes('Clinic') ? 'bg-blue-50 text-blue-600' : '' %>">
+                            <span class="mr-3">🏥</span>
+                            <span>Clinics</span>
+                        </a>
+                    </nav>
+
+                    <!-- User Info -->
+                    <div class="p-4 border-t border-gray-100">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-blue-700 rounded-full flex items-center justify-center">
+                                    <span class="text-white font-semibold">
+                                        <%= admin.name.charAt(0).toUpperCase() %>
+                                    </span>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-blue-700">
+                                        <%= admin.name %>
+                                    </p>
+                                    <p class="text-xs text-blue-700">Super Admin</p>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="/admin/logout"
+                            class="block w-full text-center px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors">
+                            Logout
+                        </a>
                     </div>
                 </div>
-                <% } %>
+            </aside>
+
+            <!-- Main Content -->
+            <div class="flex-1 ml-64">
+                <!-- Top Navbar -->
+                <nav class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+                    <div class="px-6 py-4">
+                        <h1 class="text-2xl font-bold text-gray-900">
+                            <%= typeof title !=='undefined' ? title : 'Admin Dashboard' %>
+                        </h1>
+                    </div>
+                </nav>
+
+                <!-- Page Content -->
+                <main class="p-6 min-h-screen">
+                    <%- body %>
+                </main>
+
+                <!-- Footer -->
+                <footer class="bg-white border-t border-gray-200 mt-auto">
+                    <div class="px-6 py-4">
+                        <p class="text-center text-gray-500 text-sm">&copy; <%= new Date().getFullYear() %> MediTrack
+                                Admin. All rights reserved.</p>
+                    </div>
+                </footer>
             </div>
-        </div>
-    </nav>
+            <% } else { %>
+                <!-- No sidebar for non-authenticated users -->
+                <div class="flex-1">
+                    <nav class="bg-blue-600 border-b border-blue-700 sticky top-0 z-50 shadow-sm">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div class="flex justify-between items-center h-16">
+                                <div class="flex-shrink-0">
+                                    <a href="/admin" class="text-2xl font-bold text-white hover:text-blue-100">🏥
+                                        MediTrack Admin</a>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
 
-    <main class="flex-1 py-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <%- body %>
-        </div>
-    </main>
+                    <main class="flex-1 py-8 min-h-screen">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <%- body %>
+                        </div>
+                    </main>
 
-    <footer class="bg-white border-t border-gray-200 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <p class="text-center text-gray-500 text-sm">&copy; <%= new Date().getFullYear() %> MediTrack Admin. All rights reserved.</p>
-        </div>
-    </footer>
+                    <footer class="bg-white border-t border-gray-200 mt-auto">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                            <p class="text-center text-gray-500 text-sm">&copy; <%= new Date().getFullYear() %>
+                                    MediTrack Admin. All rights reserved.</p>
+                        </div>
+                    </footer>
+                </div>
+                <% } %>
 
-    <script src="/js/main.js"></script>
-</body>
+                    <script src="/js/main.js"></script>
+    </body>
+
 </html>
-
