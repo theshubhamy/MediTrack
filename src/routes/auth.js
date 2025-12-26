@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const prisma = require('../config/database');
+const { User, Clinic, Admin } = require('../models');
 const { requireAuth } = require('../middlewares/auth');
 const { validateLogin } = require('../middlewares/validation');
 const { getRoleRedirect } = require('../utils/roles');
+const { Op } = require('sequelize');
 
 /**
  * GET /login
@@ -14,10 +15,94 @@ router.get('/login', (req, res) => {
   if (req.session.user) {
     return res.redirect('/dashboard');
   }
+  if (req.session.admin) {
+    return res.redirect('/admin');
+  }
   res.render('auth/login', {
     title: 'Login',
     layout: 'layouts/auth'
   });
+});
+
+/**
+ * GET /admin/login
+ * Show admin login page
+ */
+router.get('/admin/login', (req, res) => {
+  if (req.session.admin) {
+    return res.redirect('/admin');
+  }
+  if (req.session.user) {
+    return res.redirect('/dashboard');
+  }
+  res.render('admin/login', {
+    title: 'Admin Login',
+    layout: 'layouts/auth'
+  });
+});
+
+/**
+ * POST /admin/login
+ * Handle admin login
+ */
+router.post('/admin/login', validateLogin, async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Find admin
+    const admin = await Admin.findOne({
+      where: { email }
+    });
+
+    if (!admin) {
+      return res.render('admin/login', {
+        title: 'Admin Login',
+        layout: 'layouts/auth',
+        error: 'Invalid email or password'
+      });
+    }
+
+    // Check password
+    const isValidPassword = await bcrypt.compare(password, admin.passwordHash);
+    if (!isValidPassword) {
+      return res.render('admin/login', {
+        title: 'Admin Login',
+        layout: 'layouts/auth',
+        error: 'Invalid email or password'
+      });
+    }
+
+    // Check admin status
+    if (admin.status !== 'ACTIVE') {
+      return res.render('admin/login', {
+        title: 'Admin Login',
+        layout: 'layouts/auth',
+        error: 'Your account is not active. Please contact support.'
+      });
+    }
+
+    // Create session
+    req.session.admin = {
+      id: admin.id,
+      name: admin.name,
+      email: admin.email
+    };
+
+    // Regenerate session ID for security
+    req.session.regenerate((err) => {
+      if (err) {
+        console.error('Session regeneration error:', err);
+      }
+      res.redirect('/admin');
+    });
+  } catch (error) {
+    console.error('Admin login error:', error);
+    res.render('admin/login', {
+      title: 'Admin Login',
+      layout: 'layouts/auth',
+      error: 'An error occurred. Please try again.'
+    });
+  }
 });
 
 /**
@@ -29,11 +114,12 @@ router.post('/login', validateLogin, async (req, res) => {
     const { email, password } = req.body;
 
     // Find user with clinic information
-    const user = await prisma.user.findUnique({
+    const user = await User.findOne({
       where: { email },
-      include: {
-        clinic: true
-      }
+      include: [{
+        model: Clinic,
+        as: 'clinic'
+      }]
     });
 
     if (!user) {
@@ -113,7 +199,7 @@ router.post('/logout', requireAuth, (req, res) => {
  * GET /logout
  * Handle logout (GET request for convenience)
  */
-router.get('/logout', requireAuth, (req, res) => {
+router.get('/logout', (req, res) => {
   req.session.destroy((err) => {
     if (err) {
       console.error('Logout error:', err);
@@ -122,5 +208,17 @@ router.get('/logout', requireAuth, (req, res) => {
   });
 });
 
-module.exports = router;
+/**
+ * GET /admin/logout
+ * Handle admin logout
+ */
+router.get('/admin/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Logout error:', err);
+    }
+    res.redirect('/admin/login');
+  });
+});
 
+module.exports = router;

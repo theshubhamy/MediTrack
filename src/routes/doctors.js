@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const prisma = require('../config/database');
+const { User } = require('../models');
 const { requireAuth, requireClinicAccess, requireRole } = require('../middlewares/auth');
+const { Op } = require('sequelize');
 
 /**
  * GET /doctors
@@ -11,21 +12,14 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
   try {
     const clinicId = req.session.user.clinicId;
 
-    const doctors = await prisma.user.findMany({
+    const doctors = await User.findAll({
       where: {
         clinicId,
-        role: { in: ['DOCTOR', 'CLINIC_ADMIN'] },
+        role: { [Op.in]: ['DOCTOR', 'CLINIC_ADMIN'] },
         status: 'ACTIVE'
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        role: true,
-        createdAt: true
-      },
-      orderBy: { createdAt: 'desc' }
+      attributes: ['id', 'name', 'email', 'phone', 'role', 'createdAt'],
+      order: [['createdAt', 'DESC']]
     });
 
     res.render('doctors/index', {
@@ -75,4 +69,3 @@ router.post('/invite', requireAuth, requireClinicAccess, requireRole('CLINIC_ADM
 });
 
 module.exports = router;
-

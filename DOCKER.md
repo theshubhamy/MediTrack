@@ -42,7 +42,7 @@ docker-compose up -d --build
 docker-compose exec app npm run seed
 
 # Run migrations manually
-docker-compose exec app npx prisma migrate deploy
+docker-compose exec app npx sequelize-cli db:migrate
 
 # Access database
 docker-compose exec postgres psql -U meditrack -d meditrack

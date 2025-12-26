@@ -4,7 +4,8 @@
  */
 
 const cron = require('node-cron');
-const prisma = require('../config/database');
+const { Visit, Patient, Clinic } = require('../models');
+const { Op } = require('sequelize');
 
 /**
  * Send reminder for upcoming visits
@@ -35,17 +36,20 @@ const checkUpcomingVisits = async () => {
         dayAfter.setDate(dayAfter.getDate() + 1);
 
         // Find visits with next visit date tomorrow
-        const upcomingVisits = await prisma.visit.findMany({
+        const upcomingVisits = await Visit.findAll({
             where: {
                 nextVisitDate: {
-                    gte: tomorrow,
-                    lt: dayAfter
+                    [Op.gte]: tomorrow,
+                    [Op.lt]: dayAfter
                 }
             },
-            include: {
-                patient: true,
-                clinic: true
-            }
+            include: [{
+                model: Patient,
+                as: 'patient'
+            }, {
+                model: Clinic,
+                as: 'clinic'
+            }]
         });
 
         console.log(`Found ${upcomingVisits.length} upcoming visits for reminders`);
@@ -78,4 +82,3 @@ module.exports = {
     startReminderJob,
     checkUpcomingVisits
 };
-

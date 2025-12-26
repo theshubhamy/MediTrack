@@ -5,6 +5,9 @@ const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 
+// Initialize Sequelize models
+require('./models');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -21,28 +24,35 @@ app.use(cookieParser());
 
 // Session configuration
 const sessionConfig = {
-  secret: process.env.SESSION_SECRET || 'your-super-secret-session-key-change-this',
+  secret:
+    process.env.SESSION_SECRET || 'your-super-secret-session-key-change-this',
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  },
 };
 
-// Use Redis for session storage in production if available
-if (process.env.REDIS_HOST) {
-  const RedisStore = require('connect-redis').default;
-  const redis = require('redis');
-  const redisClient = redis.createClient({
-    host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT || 6379,
-    password: process.env.REDIS_PASSWORD || undefined
+// Initialize Redis for session storage (if available)
+const { initRedis } = require('./config/redis');
+
+// Initialize Redis and set up session store
+initRedis()
+  .then(redisClient => {
+    if (redisClient) {
+      const RedisStore = require('connect-redis').default;
+      sessionConfig.store = new RedisStore({ client: redisClient });
+      console.log('✅ Redis session store configured');
+    } else {
+      console.log('⚠️ Using in-memory session store (Redis not available)');
+    }
+  })
+  .catch(err => {
+    console.error('Redis initialization error:', err.message);
+    console.log('⚠️  Using in-memory session store');
   });
-  redisClient.connect().catch(console.error);
-  sessionConfig.store = new RedisStore({ client: redisClient });
-}
 
 app.use(session(sessionConfig));
 
@@ -53,17 +63,27 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   res.locals.clinic = req.session.clinic || null;
+  res.locals.admin = req.session.admin || null;
 
   // Role helper functions for views
   if (req.session.user) {
-    const { canWrite, canManageClinic, canManageDoctors, canCreateVisits, canViewAllData, hasRole, hasAnyRole } = require('./utils/roles');
+    const {
+      canWrite,
+      canManageClinic,
+      canManageDoctors,
+      canCreateVisits,
+      canViewAllData,
+      hasRole,
+      hasAnyRole,
+    } = require('./utils/roles');
     res.locals.canWrite = () => canWrite(req.session.user);
     res.locals.canManageClinic = () => canManageClinic(req.session.user);
     res.locals.canManageDoctors = () => canManageDoctors(req.session.user);
     res.locals.canCreateVisits = () => canCreateVisits(req.session.user);
     res.locals.canViewAllData = () => canViewAllData(req.session.user);
-    res.locals.hasRole = (role) => hasRole(req.session.user, role);
-    res.locals.hasAnyRole = (...roles) => hasAnyRole(req.session.user, ...roles);
+    res.locals.hasRole = role => hasRole(req.session.user, role);
+    res.locals.hasAnyRole = (...roles) =>
+      hasAnyRole(req.session.user, ...roles);
   }
 
   next();
@@ -76,6 +96,7 @@ const patientRoutes = require('./routes/patients');
 const visitRoutes = require('./routes/visits');
 const doctorRoutes = require('./routes/doctors');
 const settingsRoutes = require('./routes/settings');
+const adminRoutes = require('./routes/admin');
 
 app.use('/', authRoutes);
 app.use('/dashboard', dashboardRoutes);
@@ -83,12 +104,13 @@ app.use('/patients', patientRoutes);
 app.use('/visits', visitRoutes);
 app.use('/doctors', doctorRoutes);
 app.use('/settings', settingsRoutes);
+app.use('/admin', adminRoutes);
 
 // 404 handler
 app.use((req, res) => {
   res.status(404).render('errors/404', {
     title: 'Page Not Found',
-    layout: 'layouts/main'
+    layout: 'layouts/main',
   });
 });
 
@@ -99,7 +121,7 @@ app.use((err, req, res, next) => {
     title: 'Server Error',
     layout: 'layouts/main',
     error: process.env.NODE_ENV === 'development' ? err : {},
-    NODE_ENV: process.env.NODE_ENV
+    NODE_ENV: process.env.NODE_ENV,
   });
 });
 
@@ -116,4 +138,3 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
-

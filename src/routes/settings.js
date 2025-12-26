@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const prisma = require('../config/database');
+const { Clinic } = require('../models');
 const { requireAuth, requireClinicAccess, requireRole } = require('../middlewares/auth');
 
 /**
@@ -11,9 +11,7 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
   try {
     const clinicId = req.session.user.clinicId;
 
-    const clinic = await prisma.clinic.findUnique({
-      where: { id: clinicId }
-    });
+    const clinic = await Clinic.findByPk(clinicId);
 
     res.render('settings/index', {
       title: 'Settings',
@@ -37,9 +35,7 @@ router.get('/billing', requireAuth, requireClinicAccess, requireRole('CLINIC_ADM
   try {
     const clinicId = req.session.user.clinicId;
 
-    const clinic = await prisma.clinic.findUnique({
-      where: { id: clinicId }
-    });
+    const clinic = await Clinic.findByPk(clinicId);
 
     res.render('settings/billing', {
       title: 'Billing',
@@ -56,4 +52,3 @@ router.get('/billing', requireAuth, requireClinicAccess, requireRole('CLINIC_ADM
 });
 
 module.exports = router;
-

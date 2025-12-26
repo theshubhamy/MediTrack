@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const prisma = require('../config/database');
+const { Patient, Visit, User, Prescription } = require('../models');
 const { requireAuth, requireClinicAccess, requireRole } = require('../middlewares/auth');
 const { validatePatient } = require('../middlewares/validation');
 const { ROLES, canWrite } = require('../utils/roles');
+const { Op } = require('sequelize');
 
 /**
  * GET /patients
@@ -19,16 +20,16 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
     };
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search } }
+      where[Op.or] = [
+        { name: { [Op.iLike]: `%${search}%` } },
+        { phone: { [Op.like]: `%${search}%` } }
       ];
     }
 
-    const patients = await prisma.patient.findMany({
+    const patients = await Patient.findAll({
       where,
-      orderBy: { createdAt: 'desc' },
-      take: 50
+      order: [['createdAt', 'DESC']],
+      limit: 50
     });
 
     res.render('patients/index', {
@@ -65,14 +66,12 @@ router.post('/', requireAuth, requireClinicAccess, requireRole(ROLES.CLINIC_ADMI
     const clinicId = req.session.user.clinicId;
     const { name, phone, age, gender } = req.body;
 
-    const patient = await prisma.patient.create({
-      data: {
-        clinicId,
-        name,
-        phone: phone || null,
-        age: age ? parseInt(age) : null,
-        gender: gender || null
-      }
+    const patient = await Patient.create({
+      clinicId,
+      name,
+      phone: phone || null,
+      age: age ? parseInt(age) : null,
+      gender: gender || null
     });
 
     res.redirect(`/patients/${patient.id}`);
@@ -95,25 +94,24 @@ router.get('/:id', requireAuth, requireClinicAccess, async (req, res) => {
     const clinicId = req.session.user.clinicId;
     const { id } = req.params;
 
-    const patient = await prisma.patient.findFirst({
+    const patient = await Patient.findOne({
       where: {
         id,
         clinicId // Multi-tenant isolation
       },
-      include: {
-        visits: {
-          orderBy: { createdAt: 'desc' },
-          include: {
-            doctor: {
-              select: {
-                id: true,
-                name: true
-              }
-            },
-            prescription: true
-          }
-        }
-      }
+      include: [{
+        model: Visit,
+        as: 'visits',
+        order: [['createdAt', 'DESC']],
+        include: [{
+          model: User,
+          as: 'doctor',
+          attributes: ['id', 'name']
+        }, {
+          model: Prescription,
+          as: 'prescription'
+        }]
+      }]
     });
 
     if (!patient) {
@@ -138,4 +136,3 @@ router.get('/:id', requireAuth, requireClinicAccess, async (req, res) => {
 });
 
 module.exports = router;
-

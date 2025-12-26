@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const prisma = require('../config/database');
+const { Patient, Visit, User } = require('../models');
 const { requireAuth, requireClinicAccess } = require('../middlewares/auth');
 const { ROLES, canViewAllData } = require('../utils/roles');
+const { Op } = require('sequelize');
 
 /**
  * GET /dashboard
@@ -25,57 +26,56 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
 
     // Get statistics based on role
     const statsPromises = [
-      prisma.patient.count({ where: patientWhere }),
-      prisma.visit.count({ where: visitWhere })
+      Patient.count({ where: patientWhere }),
+      Visit.count({ where: visitWhere }),
     ];
 
     // Only admins and staff see doctor count
     if (canViewAllData(req.session.user)) {
       statsPromises.push(
-        prisma.user.count({
+        User.count({
           where: {
             clinicId,
-            role: { in: ['DOCTOR', 'CLINIC_ADMIN'] },
-            status: 'ACTIVE'
-          }
-        })
+            role: { [Op.in]: ['DOCTOR', 'CLINIC_ADMIN'] },
+            status: 'ACTIVE',
+          },
+        }),
       );
     } else {
       statsPromises.push(Promise.resolve(0));
     }
 
-    const [totalPatients, totalVisits, totalDoctors] = await Promise.all(statsPromises);
+    const [totalPatients, totalVisits, totalDoctors] = await Promise.all(
+      statsPromises,
+    );
 
     // Get recent visits with role-based filtering
-    const recentVisits = await prisma.visit.findMany({
+    const recentVisits = await Visit.findAll({
       where: visitWhere,
-      take: 10,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        patient: {
-          select: {
-            id: true,
-            name: true,
-            phone: true
-          }
+      limit: 10,
+      order: [['createdAt', 'DESC']],
+      include: [
+        {
+          model: Patient,
+          as: 'patient',
+          attributes: ['id', 'name', 'phone'],
         },
-        doctor: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      }
+        {
+          model: User,
+          as: 'doctor',
+          attributes: ['id', 'name'],
+        },
+      ],
     });
 
     // Get user's own visit count for doctors
     let myVisitsCount = null;
     if (userRole === ROLES.DOCTOR) {
-      myVisitsCount = await prisma.visit.count({
+      myVisitsCount = await Visit.count({
         where: {
           clinicId,
-          doctorId: userId
-        }
+          doctorId: userId,
+        },
       });
     }
 
@@ -85,21 +85,20 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
         totalPatients,
         totalVisits,
         totalDoctors: canViewAllData(req.session.user) ? totalDoctors : null,
-        myVisitsCount
+        myVisitsCount,
       },
       recentVisits,
       userRole,
-      canViewAll: canViewAllData(req.session.user)
+      canViewAll: canViewAllData(req.session.user),
     });
   } catch (error) {
     console.error('Dashboard error:', error);
     res.status(500).render('errors/500', {
       title: 'Server Error',
       layout: 'layouts/main',
-      error: process.env.NODE_ENV === 'development' ? error : {}
+      error: process.env.NODE_ENV === 'development' ? error : {},
     });
   }
 });
 
 module.exports = router;
-

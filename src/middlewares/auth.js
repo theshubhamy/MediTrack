@@ -46,9 +46,21 @@ const requireClinicAccess = (req, res, next) => {
   next();
 };
 
+/**
+ * Admin authentication middleware
+ * Ensures admin is logged in
+ */
+const requireAdminAuth = (req, res, next) => {
+  if (!req.session.admin) {
+    return res.redirect('/admin/login');
+  }
+  next();
+};
+
 module.exports = {
   requireAuth,
   requireRole,
-  requireClinicAccess
+  requireClinicAccess,
+  requireAdminAuth
 };
 

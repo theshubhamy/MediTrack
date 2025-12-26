@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const prisma = require('../config/database');
+const { Visit, Patient, User, Prescription, File } = require('../models');
 const { requireAuth, requireClinicAccess, requireRole } = require('../middlewares/auth');
 const { validateVisit } = require('../middlewares/validation');
-const { ROLES, canViewAllData } = require('../utils/roles');
+const { ROLES, canWrite } = require('../utils/roles');
+const { Op } = require('sequelize');
 
 /**
  * GET /visits/new/:patientId
@@ -15,7 +16,7 @@ router.get('/new/:patientId', requireAuth, requireClinicAccess, requireRole(ROLE
     const { patientId } = req.params;
 
     // Verify patient belongs to clinic
-    const patient = await prisma.patient.findFirst({
+    const patient = await Patient.findOne({
       where: {
         id: patientId,
         clinicId
@@ -30,16 +31,13 @@ router.get('/new/:patientId', requireAuth, requireClinicAccess, requireRole(ROLE
     }
 
     // Get doctors for this clinic
-    const doctors = await prisma.user.findMany({
+    const doctors = await User.findAll({
       where: {
         clinicId,
-        role: { in: ['DOCTOR', 'CLINIC_ADMIN'] },
+        role: { [Op.in]: ['DOCTOR', 'CLINIC_ADMIN'] },
         status: 'ACTIVE'
       },
-      select: {
-        id: true,
-        name: true
-      }
+      attributes: ['id', 'name']
     });
 
     res.render('visits/new', {
@@ -68,7 +66,7 @@ router.post('/', requireAuth, requireClinicAccess, requireRole(ROLES.CLINIC_ADMI
     const { patientId, doctorId, symptoms, diagnosis, notes, nextVisitDate } = req.body;
 
     // Verify patient belongs to clinic
-    const patient = await prisma.patient.findFirst({
+    const patient = await Patient.findOne({
       where: {
         id: patientId,
         clinicId
@@ -83,16 +81,14 @@ router.post('/', requireAuth, requireClinicAccess, requireRole(ROLES.CLINIC_ADMI
     }
 
     // Create visit
-    const visit = await prisma.visit.create({
-      data: {
-        clinicId,
-        patientId,
-        doctorId: doctorId || req.session.user.id,
-        symptoms: symptoms || null,
-        diagnosis: diagnosis || null,
-        notes: notes || null,
-        nextVisitDate: nextVisitDate ? new Date(nextVisitDate) : null
-      }
+    const visit = await Visit.create({
+      clinicId,
+      patientId,
+      doctorId: doctorId || req.session.user.id,
+      symptoms: symptoms || null,
+      diagnosis: diagnosis || null,
+      notes: notes || null,
+      nextVisitDate: nextVisitDate ? new Date(nextVisitDate) : null
     });
 
     res.redirect(`/visits/${visit.id}`);
@@ -128,20 +124,22 @@ router.get('/:id', requireAuth, requireClinicAccess, async (req, res) => {
       where.doctorId = userId;
     }
 
-    const visit = await prisma.visit.findFirst({
+    const visit = await Visit.findOne({
       where,
-      include: {
-        patient: true,
-        doctor: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        prescription: true,
-        files: true
-      }
+      include: [{
+        model: Patient,
+        as: 'patient'
+      }, {
+        model: User,
+        as: 'doctor',
+        attributes: ['id', 'name', 'email']
+      }, {
+        model: Prescription,
+        as: 'prescription'
+      }, {
+        model: File,
+        as: 'files'
+      }]
     });
 
     if (!visit) {
@@ -167,4 +165,3 @@ router.get('/:id', requireAuth, requireClinicAccess, async (req, res) => {
 });
 
 module.exports = router;
-

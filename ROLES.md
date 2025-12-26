@@ -7,6 +7,7 @@ This document explains the role-based login and access control system in MediTra
 The system supports four user roles with different permissions:
 
 ### 1. CLINIC_ADMIN 👑
+
 **Full access to all clinic features**
 
 - ✅ View all patients, visits, and doctors
@@ -17,6 +18,7 @@ The system supports four user roles with different permissions:
 - ✅ View all statistics and reports
 
 **Navigation Access:**
+
 - Dashboard
 - Patients
 - Doctors
@@ -25,6 +27,7 @@ The system supports four user roles with different permissions:
 ---
 
 ### 2. DOCTOR 👨‍⚕️
+
 **Access to patient care features**
 
 - ✅ View all patients
@@ -35,11 +38,13 @@ The system supports four user roles with different permissions:
 - ❌ Cannot invite other doctors
 
 **Navigation Access:**
+
 - Dashboard (shows only their visits)
 - Patients
 - Doctors (view only)
 
 **Dashboard Data:**
+
 - Total patients (all clinic patients)
 - My visits (only visits assigned to this doctor)
 - Recent visits (only their visits)
@@ -47,6 +52,7 @@ The system supports four user roles with different permissions:
 ---
 
 ### 3. STAFF 👤
+
 **Access to patient management features**
 
 - ✅ View all patients and visits
@@ -57,17 +63,20 @@ The system supports four user roles with different permissions:
 - ❌ Cannot access settings/billing
 
 **Navigation Access:**
+
 - Dashboard
 - Patients
 - Doctors (view only)
 
 **Dashboard Data:**
+
 - All clinic statistics
 - All recent visits
 
 ---
 
 ### 4. READ_ONLY 👁️
+
 **View-only access**
 
 - ✅ View patients
@@ -77,10 +86,12 @@ The system supports four user roles with different permissions:
 - ❌ Cannot manage doctors
 
 **Navigation Access:**
+
 - Dashboard (limited data)
 - Patients (view only)
 
 **Dashboard Data:**
+
 - Limited statistics
 - Only their own visits (if assigned as doctor)
 
@@ -89,21 +100,27 @@ The system supports four user roles with different permissions:
 ## Role-Based Features
 
 ### Login Redirect
+
 All roles are redirected to `/dashboard` after login, but see different data based on their role.
 
 ### Dashboard Filtering
+
 - **CLINIC_ADMIN & STAFF**: See all clinic data
 - **DOCTOR**: See only their own visits
 - **READ_ONLY**: See only their own visits (if assigned as doctor)
 
 ### Route Protection
+
 Routes are protected using middleware:
+
 - `requireAuth`: User must be logged in
 - `requireClinicAccess`: User must belong to a clinic
 - `requireRole(...roles)`: User must have one of the specified roles
 
 ### View-Level Access Control
+
 UI elements are conditionally rendered based on role:
+
 - Action buttons (Create, Edit) hidden for READ_ONLY
 - Navigation items hidden based on permissions
 - Role badge displayed in navigation
@@ -126,7 +143,9 @@ READ_ONLY:    readonly@clinic.com / admin123
 ## Implementation Details
 
 ### Role Helper Functions
+
 Located in `src/utils/roles.js`:
+
 - `getRoleRedirect(role)`: Get redirect URL after login
 - `hasRole(user, role)`: Check if user has specific role
 - `hasAnyRole(user, ...roles)`: Check if user has any of the roles
@@ -137,13 +156,17 @@ Located in `src/utils/roles.js`:
 - `canViewAllData(user)`: Check if user can view all clinic data
 
 ### Middleware
+
 Located in `src/middlewares/auth.js`:
+
 - `requireAuth`: Ensures user is logged in
 - `requireRole(...roles)`: Ensures user has required role(s)
 - `requireClinicAccess`: Ensures user has clinic access
 
 ### View Helpers
+
 Role helper functions are available in all EJS templates via `res.locals`:
+
 - `canWrite()`
 - `canManageClinic()`
 - `canManageDoctors()`
@@ -167,14 +190,13 @@ Role helper functions are available in all EJS templates via `res.locals`:
 
 To add a new role:
 
-1. Add role to `ROLES` enum in `prisma/schema.prisma`
+1. Add role to `UserRole` enum in `src/models/User.js`
 2. Add role constant to `src/utils/roles.js`
 3. Update helper functions in `src/utils/roles.js`
 4. Add role checks to routes in `src/routes/`
 5. Update views to handle new role
-6. Run Prisma migration: `npm run prisma:migrate`
+6. Run Sequelize migration: `npm run db:migrate`
 
 ---
 
 For more information, see the main [README.md](./README.md) file.
-

@@ -3,25 +3,44 @@ set -e
 
 echo "🚀 Starting MediTrack..."
 
-# Wait for database
-echo "⏳ Waiting for database..."
-until npx prisma db execute --url "$DATABASE_URL" --stdin <<< "SELECT 1" > /dev/null 2>&1; do
-  sleep 2
+# -----------------------------
+# Database connection settings
+# -----------------------------
+DB_HOST="postgres"
+DB_PORT="5432"
+
+if [ -n "$DATABASE_URL" ]; then
+  DB_HOST=$(echo "$DATABASE_URL" | sed -E 's|.*@([^:/]+).*|\1|')
+  DB_PORT=$(echo "$DATABASE_URL" | sed -E 's|.*:([0-9]+)/.*|\1|')
+  [ -z "$DB_PORT" ] && DB_PORT=5432
+fi
+
+echo "⏳ Waiting for PostgreSQL at $DB_HOST:$DB_PORT..."
+
+MAX_RETRIES=30
+RETRY_DELAY=2
+COUNT=0
+
+until nc -z "$DB_HOST" "$DB_PORT"; do
+  COUNT=$((COUNT + 1))
+  if [ "$COUNT" -ge "$MAX_RETRIES" ]; then
+    echo "❌ PostgreSQL not reachable after $MAX_RETRIES attempts"
+    exit 1
+  fi
+  echo "⏳ PostgreSQL not ready (attempt $COUNT/$MAX_RETRIES)"
+  sleep "$RETRY_DELAY"
 done
-echo "✅ Database ready"
 
-# Generate Prisma Client
-echo "🔧 Generating Prisma Client..."
-npx prisma generate
+echo "✅ PostgreSQL is ready"
 
-# Run migrations
-echo "📦 Running migrations..."
-npx prisma migrate deploy || echo "⚠️  Migrations already applied"
+# -----------------------------
+# Run migrations (optional)
+# -----------------------------
+if [ "$RUN_MIGRATIONS" = "true" ]; then
+  echo "📦 Running database migrations..."
+  npx sequelize-cli db:migrate
+  echo "✅ Migrations completed"
+fi
 
-# Build CSS if missing
-[ ! -f "src/public/css/style.css" ] && \
-  echo "🎨 Building CSS..." && \
-  npx tailwindcss -i ./src/public/css/input.css -o ./src/public/css/style.css
-
-echo "✅ Ready. Starting application..."
+echo "🚀 Launching application..."
 exec "$@"

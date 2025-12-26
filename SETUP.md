@@ -48,14 +48,7 @@ createdb meditrack
 CREATE DATABASE meditrack;
 ```
 
-Update `prisma/schema.prisma` if using MySQL:
-
-```prisma
-datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
-}
-```
+Update `src/config/database.js` if using MySQL - change `dialect: 'postgres'` to `dialect: 'mysql'`
 
 ### 4. Build Assets
 
@@ -66,7 +59,7 @@ npm run build:css
 ### 5. Database Migration
 
 ```bash
-npm run prisma:migrate
+npm run db:migrate
 ```
 
 ### 6. Seed Database (Optional)
@@ -110,10 +103,11 @@ Visit http://localhost:3000
 lsof -ti:3000 | xargs kill
 ```
 
-### Prisma Client Not Generated
+### Database Connection Issues
 
 ```bash
-npm run prisma:generate
+# Check database connection
+node -e "require('./src/config/database').authenticate().then(() => console.log('Connected')).catch(console.error)"
 ```
 
 ### CSS Not Building

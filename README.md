@@ -36,7 +36,7 @@ npm install
 npm run build:css
 
 # 3. Setup database (update .env first)
-npm run prisma:migrate
+npm run db:migrate
 
 # 4. Seed database (optional)
 npm run seed
@@ -66,7 +66,7 @@ See [ROLES.md](./ROLES.md) for role permissions.
 
 - **Backend:** Node.js, Express.js
 - **Frontend:** EJS (Server-Side Rendering), Tailwind CSS
-- **Database:** PostgreSQL with Prisma ORM
+- **Database:** PostgreSQL with Sequelize ORM
 - **Authentication:** Session-based with bcrypt
 - **Cache:** Redis (optional)
 - **Jobs:** node-cron for scheduled tasks
@@ -116,8 +116,8 @@ After seeding the database:
 npm start              # Start production server
 npm run dev            # Start development server
 npm run build:css      # Build Tailwind CSS
-npm run prisma:migrate # Run database migrations
-npm run prisma:studio  # Open Prisma Studio
+npm run db:migrate      # Run database migrations
+npm run db:migrate:undo # Rollback last migration
 npm run seed           # Seed database with test data
 npm run setup          # Quick setup (install + build + generate)
 npm run docker:up      # Start Docker services
