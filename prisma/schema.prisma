@@ -1,0 +1,137 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CLINIC_ADMIN
+  DOCTOR
+  STAFF
+  READ_ONLY
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  TRIAL
+  EXPIRED
+}
+
+enum Plan {
+  FREE
+  STARTER
+  CLINIC
+  PRO
+}
+
+model Clinic {
+  id                String            @id @default(uuid())
+  name              String
+  phone             String?
+  address           String?
+  plan              Plan              @default(FREE)
+  subscriptionStatus SubscriptionStatus @default(TRIAL)
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  users             User[]
+  patients          Patient[]
+  visits            Visit[]
+
+  @@map("clinics")
+}
+
+model User {
+  id          String     @id @default(uuid())
+  clinicId    String     @map("clinic_id")
+  name        String
+  email       String     @unique
+  phone       String?
+  passwordHash String    @map("password_hash")
+  role        UserRole   @default(STAFF)
+  status      UserStatus @default(ACTIVE)
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  clinic      Clinic     @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  visits      Visit[]
+
+  @@map("users")
+}
+
+model Patient {
+  id        String   @id @default(uuid())
+  clinicId String   @map("clinic_id")
+  name      String
+  phone     String?
+  age       Int?
+  gender    String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  clinic    Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  visits    Visit[]
+
+  @@map("patients")
+}
+
+model Visit {
+  id            String    @id @default(uuid())
+  clinicId      String    @map("clinic_id")
+  patientId     String    @map("patient_id")
+  doctorId      String    @map("doctor_id")
+  symptoms      String?   @db.Text
+  diagnosis     String?   @db.Text
+  notes         String?   @db.Text
+  nextVisitDate DateTime? @map("next_visit_date")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  clinic        Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient       Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor        User      @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  prescription  Prescription?
+  files         File[]
+
+  @@map("visits")
+}
+
+model Prescription {
+  id        String   @id @default(uuid())
+  visitId   String   @unique @map("visit_id")
+  medicines Json     // Array of medicine objects
+  advice    String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  visit     Visit    @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@map("prescriptions")
+}
+
+model File {
+  id        String   @id @default(uuid())
+  visitId   String   @map("visit_id")
+  fileUrl   String   @map("file_url")
+  fileType  String?  @map("file_type")
+  fileName  String?  @map("file_name")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  visit     Visit    @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@map("files")
+}
+

@@ -1,0 +1,15 @@
+<div class="text-center py-16">
+    <h1 class="text-6xl font-bold text-yellow-600 mb-4">400</h1>
+    <p class="text-xl text-gray-600 mb-4">Validation Error</p>
+    <% if (typeof errors !== 'undefined' && errors.length > 0) { %>
+    <div class="max-w-md mx-auto mb-8">
+        <ul class="list-disc list-inside text-left space-y-2">
+            <% errors.forEach(err => { %>
+            <li class="text-red-600"><%= err.msg %></li>
+            <% }); %>
+        </ul>
+    </div>
+    <% } %>
+    <a href="javascript:history.back()" class="btn btn-primary">Go Back</a>
+</div>
+

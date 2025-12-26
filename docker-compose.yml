@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: meditrack-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: meditrack
+      POSTGRES_PASSWORD: meditrack_password
+      POSTGRES_DB: meditrack
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U meditrack']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - meditrack-network
+
+  # Redis for Session Storage
+  redis:
+    image: redis:7-alpine
+    container_name: meditrack-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass redis_password
+    volumes:
+      - redis_data:/data
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - meditrack-network
+
+  # MediTrack Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: meditrack-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      APP_URL: http://localhost:3000
+
+      # Database
+      DATABASE_URL: postgresql://meditrack:meditrack_password@postgres:5432/meditrack?schema=public
+
+      # Session
+      SESSION_SECRET: ${SESSION_SECRET:-change-this-secret-in-production}
+
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redis_password
+
+      # File Upload
+      MAX_FILE_SIZE: 5242880
+      UPLOAD_DIR: ./uploads
+    volumes:
+      - ./uploads:/app/uploads
+    ports:
+      - '3000:3000'
+    networks:
+      - meditrack-network
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3000', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  meditrack-network:
+    driver: bridge

@@ -1,0 +1,23 @@
+<form method="POST" action="/login" class="space-y-6">
+    <h2 class="text-2xl font-bold text-gray-900 mb-6">Login</h2>
+
+    <% if (typeof error !=='undefined' && error) { %>
+        <div class="alert alert-error">
+            <%= error %>
+        </div>
+        <% } %>
+
+            <div class="form-group">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" id="email" name="email" required autofocus placeholder="your@email.com"
+                    class="form-input">
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" name="password" required placeholder="Enter your password"
+                    class="form-input">
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Login</button>
+</form>

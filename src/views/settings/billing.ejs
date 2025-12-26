@@ -1,0 +1,38 @@
+<div>
+    <h1 class="text-3xl font-bold text-gray-900 mb-8">Billing</h1>
+
+    <div class="card mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Current Plan</h2>
+        <div class="space-y-2">
+            <p class="text-lg"><strong class="text-gray-900"><%= clinic.plan %></strong></p>
+            <p class="text-gray-600">Status: <strong><%= clinic.subscriptionStatus %></strong></p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Available Plans</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Free</h3>
+                <p class="text-3xl font-bold text-blue-600 mb-2">₹0</p>
+                <p class="text-gray-600">1 Doctor</p>
+            </div>
+            <div class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Starter</h3>
+                <p class="text-3xl font-bold text-blue-600 mb-2">₹299</p>
+                <p class="text-gray-600">1 Doctor</p>
+            </div>
+            <div class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Clinic</h3>
+                <p class="text-3xl font-bold text-blue-600 mb-2">₹799</p>
+                <p class="text-gray-600">3 Doctors</p>
+            </div>
+            <div class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Pro</h3>
+                <p class="text-3xl font-bold text-blue-600 mb-2">₹1499</p>
+                <p class="text-gray-600">Unlimited Doctors</p>
+            </div>
+        </div>
+    </div>
+</div>
+

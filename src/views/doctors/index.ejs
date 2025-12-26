@@ -1,0 +1,42 @@
+<div>
+    <div class="page-header">
+        <h1 class="text-3xl font-bold text-gray-900">Doctors</h1>
+        <% if (typeof user !== 'undefined' && user && user.role === 'CLINIC_ADMIN') { %>
+        <a href="/doctors/invite" class="btn btn-primary">Invite Doctor</a>
+        <% } %>
+    </div>
+
+    <% if (doctors.length === 0) { %>
+    <div class="empty-state">
+        <p>No doctors found.</p>
+    </div>
+    <% } else { %>
+    <div class="card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <% doctors.forEach(doctor => { %>
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><%= doctor.name %></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><%= doctor.email %></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><%= doctor.phone || '-' %></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><%= doctor.role %></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><%= new Date(doctor.createdAt).toLocaleDateString() %></td>
+                    </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <% } %>
+</div>
+

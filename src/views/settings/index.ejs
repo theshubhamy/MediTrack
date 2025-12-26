@@ -1,0 +1,31 @@
+<div>
+    <h1 class="text-3xl font-bold text-gray-900 mb-8">Settings</h1>
+
+    <div class="card mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Clinic Information</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="text-sm font-medium text-gray-500">Clinic Name</label>
+                <p class="mt-1 text-gray-900"><%= clinic.name %></p>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-500">Phone</label>
+                <p class="mt-1 text-gray-900"><%= clinic.phone || '-' %></p>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-500">Address</label>
+                <p class="mt-1 text-gray-900"><%= clinic.address || '-' %></p>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-500">Plan</label>
+                <p class="mt-1 text-gray-900"><%= clinic.plan %></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Billing</h2>
+        <a href="/settings/billing" class="btn btn-primary">Manage Billing</a>
+    </div>
+</div>
+

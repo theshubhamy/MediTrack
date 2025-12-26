@@ -1,0 +1,11 @@
+<div class="text-center py-16">
+    <h1 class="text-6xl font-bold text-red-600 mb-4">403</h1>
+    <p class="text-xl text-gray-600 mb-2">Access Denied</p>
+    <% if (typeof message !== 'undefined' && message) { %>
+    <p class="text-gray-500 mb-8"><%= message %></p>
+    <% } else { %>
+    <div class="mb-8"></div>
+    <% } %>
+    <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+</div>
+

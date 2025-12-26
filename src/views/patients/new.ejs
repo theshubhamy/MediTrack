@@ -1,0 +1,68 @@
+<div>
+    <h1 class="text-3xl font-bold text-gray-900 mb-8">Add New Patient</h1>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert-error">
+        <%= error %>
+    </div>
+    <% } %>
+
+    <div class="card max-w-2xl">
+        <form method="POST" action="/patients" class="space-y-6">
+            <div class="form-group">
+                <label for="name" class="form-label">Name *</label>
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
+                    value="<%= typeof name !== 'undefined' ? name : '' %>"
+                    class="form-input"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="phone" class="form-label">Phone</label>
+                <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    placeholder="10 digits"
+                    value="<%= typeof phone !== 'undefined' ? phone : '' %>"
+                    class="form-input"
+                >
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="form-group">
+                    <label for="age" class="form-label">Age</label>
+                    <input
+                        type="number"
+                        id="age"
+                        name="age"
+                        min="0"
+                        max="150"
+                        value="<%= typeof age !== 'undefined' ? age : '' %>"
+                        class="form-input"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="gender" class="form-label">Gender</label>
+                    <select id="gender" name="gender" class="form-select">
+                        <option value="">Select...</option>
+                        <option value="Male" <%= typeof gender !== 'undefined' && gender === 'Male' ? 'selected' : '' %>>Male</option>
+                        <option value="Female" <%= typeof gender !== 'undefined' && gender === 'Female' ? 'selected' : '' %>>Female</option>
+                        <option value="Other" <%= typeof gender !== 'undefined' && gender === 'Other' ? 'selected' : '' %>>Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="/patients" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">Create Patient</button>
+            </div>
+        </form>
+    </div>
+</div>
+

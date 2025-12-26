@@ -1,0 +1,75 @@
+<div>
+    <h1 class="text-3xl font-bold text-gray-900 mb-8">New Visit - <%= patient.name %></h1>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert-error">
+        <%= error %>
+    </div>
+    <% } %>
+
+    <div class="card max-w-3xl">
+        <form method="POST" action="/visits" class="space-y-6">
+            <input type="hidden" name="patientId" value="<%= patient.id %>">
+
+            <div class="form-group">
+                <label for="doctorId" class="form-label">Doctor</label>
+                <select id="doctorId" name="doctorId" required class="form-select">
+                    <% doctors.forEach(doctor => { %>
+                    <option value="<%= doctor.id %>" <%= selectedDoctorId === doctor.id ? 'selected' : '' %>>
+                        <%= doctor.name %>
+                    </option>
+                    <% }); %>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="symptoms" class="form-label">Symptoms</label>
+                <textarea
+                    id="symptoms"
+                    name="symptoms"
+                    rows="4"
+                    placeholder="Describe patient symptoms..."
+                    class="form-textarea"
+                ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="diagnosis" class="form-label">Diagnosis</label>
+                <textarea
+                    id="diagnosis"
+                    name="diagnosis"
+                    rows="4"
+                    placeholder="Enter diagnosis..."
+                    class="form-textarea"
+                ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="notes" class="form-label">Notes</label>
+                <textarea
+                    id="notes"
+                    name="notes"
+                    rows="3"
+                    placeholder="Additional notes..."
+                    class="form-textarea"
+                ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="nextVisitDate" class="form-label">Next Visit Date</label>
+                <input
+                    type="date"
+                    id="nextVisitDate"
+                    name="nextVisitDate"
+                    class="form-input"
+                >
+            </div>
+
+            <div class="form-actions">
+                <a href="/patients/<%= patient.id %>" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">Create Visit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
