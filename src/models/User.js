@@ -44,6 +44,36 @@ module.exports = sequelize => {
         type: DataTypes.ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED'),
         defaultValue: 'ACTIVE',
       },
+      emailNotificationsEnabled: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+        field: 'email_notifications_enabled',
+      },
+      smsNotificationsEnabled: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        field: 'sms_notifications_enabled',
+      },
+      appointmentReminders: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+        field: 'appointment_reminders',
+      },
+      visitReminders: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+        field: 'visit_reminders',
+      },
+      preferredLanguage: {
+        type: DataTypes.STRING,
+        defaultValue: 'en',
+        field: 'preferred_language',
+      },
+      timezone: {
+        type: DataTypes.STRING,
+        defaultValue: 'UTC',
+        allowNull: true,
+      },
     },
     {
       tableName: 'users',

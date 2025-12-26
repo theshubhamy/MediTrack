@@ -1,0 +1,100 @@
+<div>
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">Notification Preferences</h1>
+        <p class="text-gray-600 mt-2">Manage your personal notification settings</p>
+    </div>
+
+    <% if (typeof success !== 'undefined' && success) { %>
+        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
+            <%= success %>
+        </div>
+    <% } %>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <form method="POST" action="/settings/notifications">
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Notification Channels</h3>
+
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <label for="emailNotificationsEnabled" class="text-sm font-medium text-gray-700">
+                                    Email Notifications
+                                </label>
+                                <p class="text-xs text-gray-500">Receive notifications via email</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="emailNotificationsEnabled" name="emailNotificationsEnabled"
+                                    <%= user.emailNotificationsEnabled ? 'checked' : '' %>
+                                    class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <label for="smsNotificationsEnabled" class="text-sm font-medium text-gray-700">
+                                    SMS Notifications
+                                </label>
+                                <p class="text-xs text-gray-500">Receive notifications via SMS</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="smsNotificationsEnabled" name="smsNotificationsEnabled"
+                                    <%= user.smsNotificationsEnabled ? 'checked' : '' %>
+                                    class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-200 pt-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Reminder Preferences</h3>
+
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <label for="appointmentReminders" class="text-sm font-medium text-gray-700">
+                                    Appointment Reminders
+                                </label>
+                                <p class="text-xs text-gray-500">Get reminded about upcoming appointments</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="appointmentReminders" name="appointmentReminders"
+                                    <%= user.appointmentReminders ? 'checked' : '' %>
+                                    class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <label for="visitReminders" class="text-sm font-medium text-gray-700">
+                                    Visit Reminders
+                                </label>
+                                <p class="text-xs text-gray-500">Get reminded about scheduled follow-up visits</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="visitReminders" name="visitReminders"
+                                    <%= user.visitReminders ? 'checked' : '' %>
+                                    class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex gap-4">
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Save Preferences
+                </button>
+                <a href="/settings" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+

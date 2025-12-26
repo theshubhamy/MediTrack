@@ -30,6 +30,49 @@ module.exports = sequelize => {
         defaultValue: 'TRIAL',
         field: 'subscription_status',
       },
+      email: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      emailNotificationsEnabled: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+        field: 'email_notifications_enabled',
+      },
+      smsNotificationsEnabled: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        field: 'sms_notifications_enabled',
+      },
+      appointmentReminders: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+        field: 'appointment_reminders',
+      },
+      visitReminders: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+        field: 'visit_reminders',
+      },
+      website: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      registrationNumber: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        field: 'registration_number',
+      },
+      taxId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        field: 'tax_id',
+      },
+      logoUrl: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        field: 'logo_url',
+      },
     },
     {
       tableName: 'clinics',

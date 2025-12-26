@@ -1,38 +1,155 @@
 <div>
-    <h1 class="text-3xl font-bold text-gray-900 mb-8">Billing</h1>
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">Billing & Subscription</h1>
+        <p class="text-gray-600 mt-2">Manage your subscription plan and billing</p>
+    </div>
 
-    <div class="card mb-6">
+    <!-- Current Plan -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-4">Current Plan</h2>
-        <div class="space-y-2">
-            <p class="text-lg"><strong class="text-gray-900"><%= clinic.plan %></strong></p>
-            <p class="text-gray-600">Status: <strong><%= clinic.subscriptionStatus %></strong></p>
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-2xl font-bold text-gray-900"><%= clinic.plan %></p>
+                <p class="text-sm text-gray-600 mt-1">
+                    Status:
+                    <span class="px-2 py-1 rounded-full text-xs font-semibold
+                        <%= clinic.subscriptionStatus === 'ACTIVE' ? 'bg-green-100 text-green-800' : '' %>
+                        <%= clinic.subscriptionStatus === 'TRIAL' ? 'bg-blue-100 text-blue-800' : '' %>
+                        <%= clinic.subscriptionStatus === 'EXPIRED' ? 'bg-red-100 text-red-800' : '' %>
+                        <%= clinic.subscriptionStatus === 'INACTIVE' ? 'bg-gray-100 text-gray-800' : '' %>">
+                        <%= clinic.subscriptionStatus %>
+                    </span>
+                </p>
+            </div>
+            <a href="/settings/invoices" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                View Invoices
+            </a>
         </div>
     </div>
 
-    <div class="card">
+    <!-- Available Plans -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-6">Available Plans</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Free</h3>
-                <p class="text-3xl font-bold text-blue-600 mb-2">₹0</p>
-                <p class="text-gray-600">1 Doctor</p>
-            </div>
-            <div class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Starter</h3>
-                <p class="text-3xl font-bold text-blue-600 mb-2">₹299</p>
-                <p class="text-gray-600">1 Doctor</p>
-            </div>
-            <div class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Clinic</h3>
-                <p class="text-3xl font-bold text-blue-600 mb-2">₹799</p>
-                <p class="text-gray-600">3 Doctors</p>
-            </div>
-            <div class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Pro</h3>
-                <p class="text-3xl font-bold text-blue-600 mb-2">₹1499</p>
-                <p class="text-gray-600">Unlimited Doctors</p>
-            </div>
+            <% Object.keys(planPricing).forEach(plan => {
+                const pricing = planPricing[plan];
+                const isCurrentPlan = clinic.plan === plan;
+            %>
+                <div class="border-2 <%= isCurrentPlan ? 'border-blue-500' : 'border-gray-200' %> rounded-lg p-6 hover:shadow-lg transition-shadow <%= isCurrentPlan ? 'bg-blue-50' : '' %>">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900"><%= plan %></h3>
+                        <% if (isCurrentPlan) { %>
+                            <span class="px-2 py-1 bg-blue-600 text-white text-xs font-semibold rounded">Current</span>
+                        <% } %>
+                    </div>
+                    <p class="text-3xl font-bold text-blue-600 mb-2">$<%= pricing.price %></p>
+                    <p class="text-sm text-gray-600 mb-4">per month</p>
+                    <ul class="space-y-2 mb-6 text-sm text-gray-700">
+                        <% pricing.features.forEach(feature => { %>
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">✓</span>
+                                <span><%= feature %></span>
+                            </li>
+                        <% }); %>
+                    </ul>
+                    <% if (!isCurrentPlan) { %>
+                        <button onclick="upgradePlan('<%= plan %>', <%= pricing.price %>)"
+                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            Upgrade
+                        </button>
+                    <% } else { %>
+                        <button disabled
+                            class="w-full px-4 py-2 bg-gray-300 text-gray-600 rounded-lg cursor-not-allowed">
+                            Current Plan
+                        </button>
+                    <% } %>
+                </div>
+            <% }); %>
         </div>
     </div>
+
+    <!-- Recent Invoices -->
+    <% if (invoices.length > 0) { %>
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Recent Invoices</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoice #</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <% invoices.forEach(invoice => { %>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    <%= invoice.invoiceNumber %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <%= new Date(invoice.created_at).toLocaleDateString() %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    $<%= parseFloat(invoice.totalAmount).toFixed(2) %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full
+                                        <%= invoice.status === 'PAID' ? 'bg-green-100 text-green-800' : '' %>
+                                        <%= invoice.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : '' %>
+                                        <%= invoice.status === 'OVERDUE' ? 'bg-red-100 text-red-800' : '' %>
+                                        <%= invoice.status === 'CANCELLED' ? 'bg-gray-100 text-gray-800' : '' %>">
+                                        <%= invoice.status %>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <a href="/settings/invoices/<%= invoice.id %>" class="text-blue-600 hover:text-blue-700 mr-3">View</a>
+                                    <a href="/settings/invoices/<%= invoice.id %>/print" target="_blank" class="text-green-600 hover:text-green-700">Print</a>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-4 text-center">
+                <a href="/settings/invoices" class="text-blue-600 hover:text-blue-700">View All Invoices →</a>
+            </div>
+        </div>
+    <% } %>
 </div>
 
+<script>
+async function upgradePlan(plan, amount) {
+    if (!confirm(`Upgrade to ${plan} plan for $${amount}/month?`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/settings/payment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                plan,
+                amount,
+                paymentMethod: 'card', // This would come from a payment form
+            }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            alert('Plan upgraded successfully!');
+            window.location.reload();
+        } else {
+            alert('Payment failed: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Payment error:', error);
+        alert('An error occurred during payment processing');
+    }
+}
+</script>

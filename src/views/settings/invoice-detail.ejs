@@ -1,0 +1,161 @@
+<div>
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Invoice Details</h1>
+            <p class="text-gray-600 mt-2">Invoice #<%= invoice.invoiceNumber %></p>
+        </div>
+        <div class="mt-4 md:mt-0 flex gap-2">
+            <a href="/settings/invoices/<%= invoice.id %>/print" target="_blank"
+                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                🖨️ Print
+            </a>
+            <a href="/settings/invoices" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                ← Back
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Invoice Details -->
+        <div class="lg:col-span-2 bg-white rounded-lg shadow-md p-6">
+            <div class="mb-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Invoice</h2>
+                        <p class="text-sm text-gray-600">#<%= invoice.invoiceNumber %></p>
+                    </div>
+                    <span class="px-3 py-1 text-sm font-semibold rounded-full
+                        <%= invoice.status === 'PAID' ? 'bg-green-100 text-green-800' : '' %>
+                        <%= invoice.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : '' %>
+                        <%= invoice.status === 'OVERDUE' ? 'bg-red-100 text-red-800' : '' %>">
+                        <%= invoice.status %>
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <p class="text-gray-600">Issue Date:</p>
+                        <p class="font-medium text-gray-900"><%= new Date(invoice.created_at).toLocaleDateString() %></p>
+                    </div>
+                    <% if (invoice.dueDate) { %>
+                        <div>
+                            <p class="text-gray-600">Due Date:</p>
+                            <p class="font-medium text-gray-900"><%= new Date(invoice.dueDate).toLocaleDateString() %></p>
+                        </div>
+                    <% } %>
+                    <% if (invoice.billingPeriodStart && invoice.billingPeriodEnd) { %>
+                        <div>
+                            <p class="text-gray-600">Billing Period:</p>
+                            <p class="font-medium text-gray-900">
+                                <%= new Date(invoice.billingPeriodStart).toLocaleDateString() %> -
+                                <%= new Date(invoice.billingPeriodEnd).toLocaleDateString() %>
+                            </p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Invoice Items -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Invoice Details</h3>
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Description</th>
+                                <th class="px-4 py-3 text-right text-sm font-medium text-gray-700">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-t border-gray-200">
+                                <td class="px-4 py-3 text-sm text-gray-900">
+                                    <%= invoice.plan %> Plan Subscription
+                                    <% if (invoice.billingPeriodStart && invoice.billingPeriodEnd) { %>
+                                        <br>
+                                        <span class="text-xs text-gray-500">
+                                            <%= new Date(invoice.billingPeriodStart).toLocaleDateString() %> -
+                                            <%= new Date(invoice.billingPeriodEnd).toLocaleDateString() %>
+                                        </span>
+                                    <% } %>
+                                </td>
+                                <td class="px-4 py-3 text-sm text-gray-900 text-right">
+                                    $<%= parseFloat(invoice.amount).toFixed(2) %>
+                                </td>
+                            </tr>
+                            <% if (parseFloat(invoice.taxAmount) > 0) { %>
+                                <tr class="border-t border-gray-200">
+                                    <td class="px-4 py-3 text-sm text-gray-900">Tax</td>
+                                    <td class="px-4 py-3 text-sm text-gray-900 text-right">
+                                        $<%= parseFloat(invoice.taxAmount).toFixed(2) %>
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                        <tfoot class="bg-gray-50 border-t-2 border-gray-300">
+                            <tr>
+                                <td class="px-4 py-3 text-sm font-semibold text-gray-900">Total</td>
+                                <td class="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
+                                    $<%= parseFloat(invoice.totalAmount).toFixed(2) %>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Payment Information -->
+            <% if (invoice.status === 'PAID') { %>
+                <div class="mb-6 p-4 bg-green-50 rounded-lg">
+                    <h3 class="text-sm font-semibold text-green-900 mb-2">Payment Information</h3>
+                    <div class="text-sm text-green-800">
+                        <p>Paid on: <%= new Date(invoice.paidDate).toLocaleDateString() %></p>
+                        <% if (invoice.paymentMethod) { %>
+                            <p>Payment Method: <%= invoice.paymentMethod %></p>
+                        <% } %>
+                        <% if (invoice.paymentTransactionId) { %>
+                            <p>Transaction ID: <%= invoice.paymentTransactionId %></p>
+                        <% } %>
+                    </div>
+                </div>
+            <% } %>
+
+            <!-- Notes -->
+            <% if (invoice.notes) { %>
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900 mb-2">Notes</h3>
+                    <p class="text-sm text-gray-700"><%= invoice.notes %></p>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Clinic Information</h2>
+            <div class="space-y-3 text-sm">
+                <div>
+                    <p class="text-gray-600">Clinic Name</p>
+                    <p class="font-medium text-gray-900"><%= invoice.clinic.name %></p>
+                </div>
+                <% if (invoice.clinic.address) { %>
+                    <div>
+                        <p class="text-gray-600">Address</p>
+                        <p class="font-medium text-gray-900"><%= invoice.clinic.address %></p>
+                    </div>
+                <% } %>
+                <% if (invoice.clinic.phone) { %>
+                    <div>
+                        <p class="text-gray-600">Phone</p>
+                        <p class="font-medium text-gray-900"><%= invoice.clinic.phone %></p>
+                    </div>
+                <% } %>
+                <% if (invoice.clinic.email) { %>
+                    <div>
+                        <p class="text-gray-600">Email</p>
+                        <p class="font-medium text-gray-900"><%= invoice.clinic.email %></p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,98 @@
+<div>
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Appointment Calendar</h1>
+            <p class="text-gray-600 mt-2">View appointments in calendar format</p>
+        </div>
+        <div class="mt-4 md:mt-0 flex gap-2">
+            <a href="/appointments" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">List View</a>
+            <a href="/appointments/calendar" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Calendar View</a>
+            <a href="/appointments/new" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                <span class="mr-2">➕</span>
+                <span>New</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Month Navigation -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6 flex items-center justify-between">
+        <a href="/appointments/calendar?month=<%= currentMonth - 1 === 0 ? 12 : currentMonth - 1 %>&year=<%= currentMonth - 1 === 0 ? currentYear - 1 : currentYear %>"
+            class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">← Previous</a>
+        <h2 class="text-xl font-bold text-gray-900">
+            <%= new Date(currentYear, currentMonth - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) %>
+        </h2>
+        <a href="/appointments/calendar?month=<%= currentMonth + 1 === 13 ? 1 : currentMonth + 1 %>&year=<%= currentMonth + 1 === 13 ? currentYear + 1 : currentYear %>"
+            class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">Next →</a>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="grid grid-cols-7 gap-px bg-gray-200">
+            <!-- Day Headers -->
+            <div class="bg-gray-50 p-2 text-center text-sm font-semibold text-gray-700">Sun</div>
+            <div class="bg-gray-50 p-2 text-center text-sm font-semibold text-gray-700">Mon</div>
+            <div class="bg-gray-50 p-2 text-center text-sm font-semibold text-gray-700">Tue</div>
+            <div class="bg-gray-50 p-2 text-center text-sm font-semibold text-gray-700">Wed</div>
+            <div class="bg-gray-50 p-2 text-center text-sm font-semibold text-gray-700">Thu</div>
+            <div class="bg-gray-50 p-2 text-center text-sm font-semibold text-gray-700">Fri</div>
+            <div class="bg-gray-50 p-2 text-center text-sm font-semibold text-gray-700">Sat</div>
+
+            <%
+            const firstDay = new Date(currentYear, currentMonth - 1, 1);
+            const lastDay = new Date(currentYear, currentMonth, 0);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - startDate.getDay());
+
+            const appointmentsByDate = {};
+            appointments.forEach(apt => {
+                const dateKey = apt.appointmentDate;
+                if (!appointmentsByDate[dateKey]) {
+                    appointmentsByDate[dateKey] = [];
+                }
+                appointmentsByDate[dateKey].push(apt);
+            });
+
+            // Generate calendar days
+            const calendarDays = [];
+            const currentDate = new Date(startDate);
+            for (let i = 0; i < 42; i++) {
+                calendarDays.push(new Date(currentDate));
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            %>
+
+            <% calendarDays.forEach(day => {
+                const dateKey = day.toISOString().split('T')[0];
+                const isCurrentMonth = day.getMonth() === currentMonth - 1;
+                const isToday = day.toDateString() === new Date().toDateString();
+                const dayAppointments = appointmentsByDate[dateKey] || [];
+            %>
+                <div class="bg-white p-2 min-h-24 <%= !isCurrentMonth ? 'bg-gray-50' : '' %>">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-sm font-medium <%= isToday ? 'bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center' : isCurrentMonth ? 'text-gray-900' : 'text-gray-400' %>">
+                            <%= day.getDate() %>
+                        </span>
+                    </div>
+                    <div class="space-y-1">
+                        <% dayAppointments.slice(0, 3).forEach(apt => { %>
+                            <a href="/appointments/<%= apt.id %>"
+                                class="block text-xs p-1 rounded truncate
+                                    <%= apt.status === 'SCHEDULED' ? 'bg-yellow-100 text-yellow-800' : '' %>
+                                    <%= apt.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-800' : '' %>
+                                    <%= apt.status === 'COMPLETED' ? 'bg-green-100 text-green-800' : '' %>
+                                    <%= apt.status === 'CANCELLED' ? 'bg-red-100 text-red-800' : '' %>
+                                    <%= apt.status === 'NO_SHOW' ? 'bg-gray-100 text-gray-800' : '' %>
+                                    hover:opacity-75">
+                                <%= apt.appointmentTime %> - <%= apt.patient.name %>
+                            </a>
+                        <% }); %>
+                        <% if (dayAppointments.length > 3) { %>
+                            <div class="text-xs text-gray-500">+<%= dayAppointments.length - 3 %> more</div>
+                        <% } %>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+    </div>
+</div>
+

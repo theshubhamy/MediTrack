@@ -1,31 +1,114 @@
 <div>
-    <h1 class="text-3xl font-bold text-gray-900 mb-8">Settings</h1>
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">Settings</h1>
+        <p class="text-gray-600 mt-2">Manage your account and clinic settings</p>
+    </div>
 
-    <div class="card mb-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Clinic Information</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label class="text-sm font-medium text-gray-500">Clinic Name</label>
-                <p class="mt-1 text-gray-900"><%= clinic.name %></p>
+    <!-- Settings Navigation -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Clinic Profile -->
+        <% if (typeof canManageClinic !== 'undefined' && canManageClinic()) { %>
+            <a href="/settings/clinic" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                        <span class="text-2xl">🏥</span>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Clinic Profile</h3>
+                        <p class="text-sm text-gray-600">Manage clinic information</p>
+                    </div>
+                </div>
+            </a>
+        <% } %>
+
+        <!-- User Profile -->
+        <a href="/settings/profile" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                    <span class="text-2xl">👤</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">My Profile</h3>
+                    <p class="text-sm text-gray-600">Update personal information</p>
+                </div>
             </div>
-            <div>
-                <label class="text-sm font-medium text-gray-500">Phone</label>
-                <p class="mt-1 text-gray-900"><%= clinic.phone || '-' %></p>
+        </a>
+
+        <!-- Password -->
+        <a href="/settings/password" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mr-4">
+                    <span class="text-2xl">🔒</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Change Password</h3>
+                    <p class="text-sm text-gray-600">Update your password</p>
+                </div>
             </div>
-            <div>
-                <label class="text-sm font-medium text-gray-500">Address</label>
-                <p class="mt-1 text-gray-900"><%= clinic.address || '-' %></p>
+        </a>
+
+        <!-- Email Settings -->
+        <% if (typeof canManageClinic !== 'undefined' && canManageClinic()) { %>
+            <a href="/settings/email" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+                        <span class="text-2xl">📧</span>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Email Settings</h3>
+                        <p class="text-sm text-gray-600">Configure email preferences</p>
+                    </div>
+                </div>
+            </a>
+        <% } %>
+
+        <!-- Notifications -->
+        <a href="/settings/notifications" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mr-4">
+                    <span class="text-2xl">🔔</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Notifications</h3>
+                    <p class="text-sm text-gray-600">Manage notification preferences</p>
+                </div>
             </div>
-            <div>
-                <label class="text-sm font-medium text-gray-500">Plan</label>
-                <p class="mt-1 text-gray-900"><%= clinic.plan %></p>
+        </a>
+
+        <!-- Billing -->
+        <% if (typeof canManageClinic !== 'undefined' && canManageClinic()) { %>
+            <a href="/settings/billing" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mr-4">
+                        <span class="text-2xl">💳</span>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Billing & Subscription</h3>
+                        <p class="text-sm text-gray-600">Manage subscription and payments</p>
+                    </div>
+                </div>
+            </a>
+        <% } %>
+    </div>
+
+    <!-- Quick Info -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Clinic Information</h3>
+            <div class="space-y-2 text-sm">
+                <p><span class="text-gray-600">Name:</span> <span class="font-medium"><%= clinic.name %></span></p>
+                <p><span class="text-gray-600">Plan:</span> <span class="font-medium"><%= clinic.plan %></span></p>
+                <p><span class="text-gray-600">Status:</span> <span class="font-medium"><%= clinic.subscriptionStatus %></span></p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
+            <div class="space-y-2 text-sm">
+                <p><span class="text-gray-600">Name:</span> <span class="font-medium"><%= user.name %></span></p>
+                <p><span class="text-gray-600">Email:</span> <span class="font-medium"><%= user.email %></span></p>
+                <p><span class="text-gray-600">Role:</span> <span class="font-medium"><%= user.role.replace('_', ' ') %></span></p>
             </div>
         </div>
     </div>
-
-    <div class="card">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Billing</h2>
-        <a href="/settings/billing" class="btn btn-primary">Manage Billing</a>
-    </div>
 </div>
-

@@ -28,6 +28,28 @@ module.exports = sequelize => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      doctorSignature: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        field: 'doctor_signature',
+        comment: 'Base64 encoded signature image or signature data',
+      },
+      doctorName: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        field: 'doctor_name',
+      },
+      doctorLicense: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        field: 'doctor_license',
+      },
+      templateId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        field: 'template_id',
+        comment: 'Reference to prescription template if used',
+      },
     },
     {
       tableName: 'prescriptions',
