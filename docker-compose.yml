@@ -65,7 +65,7 @@ services:
     volumes:
       - ./uploads:/app/uploads
     ports:
-      - '3000:3000'
+      - '3301:3301'
     networks:
       - meditrack-network
 

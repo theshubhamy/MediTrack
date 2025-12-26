@@ -9,7 +9,7 @@ const path = require('path');
 require('./models');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3301;
 
 // View engine setup
 app.set('view engine', 'ejs');

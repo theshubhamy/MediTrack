@@ -22,7 +22,7 @@ async function initRedis() {
             console.error('❌ Redis reconnect failed');
             return false;
           }
-          return Math.min(retries * 100, 3000);
+          return Math.min(retries * 100, 3301);
         },
       },
     });

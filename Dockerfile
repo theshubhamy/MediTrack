@@ -54,10 +54,10 @@ RUN chmod +x docker-entrypoint.sh
 
 USER nodejs
 
-EXPOSE 3000
+EXPOSE 3301
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD wget -qO- http://localhost:3000/health || exit 1
+  CMD wget -qO- http://localhost:3301/health || exit 1
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["node", "src/app.js"]

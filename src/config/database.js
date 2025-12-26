@@ -20,7 +20,7 @@ function createSequelize() {
       pool: {
         max: 5,
         min: 0,
-        acquire: 30000,
+        acquire: 33010,
         idle: 10000,
       },
     });

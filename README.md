@@ -16,7 +16,7 @@ A multi-tenant SaaS application for small clinics to manage **patients, doctors,
 docker-compose up -d
 ```
 
-The application will be available at http://localhost:3000
+The application will be available at http://localhost:3301
 
 **Seed database:**
 
@@ -121,13 +121,13 @@ docker-compose logs -f app
 docker-compose down
 ```
 
-Application: http://localhost:3000
+Application: http://localhost:3301
 
 ## Services
 
 - **PostgreSQL** - Port 5432 (User: `meditrack`, Password: `meditrack_password`)
 - **Redis** - Port 6379 (Password: `redis_password`)
-- **Application** - Port 3000
+- **Application** - Port 3301
 
 ## Common Commands
 
