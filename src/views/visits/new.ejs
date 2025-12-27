@@ -10,6 +10,9 @@
     <div class="card max-w-3xl">
         <form method="POST" action="/visits" class="space-y-6">
             <input type="hidden" name="patientId" value="<%= patient.id %>">
+            <% if (typeof appointmentId !== 'undefined' && appointmentId) { %>
+            <input type="hidden" name="appointmentId" value="<%= appointmentId %>">
+            <% } %>
 
             <div class="form-group">
                 <label for="doctorId" class="form-label">Doctor</label>

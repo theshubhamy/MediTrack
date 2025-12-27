@@ -177,8 +177,9 @@
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-xl font-bold text-gray-900 flex items-center">
                     <span class="mr-2">⏰</span>
-                    Upcoming
+                    Upcoming Appointments
                 </h2>
+                <a href="/appointments" class="text-sm text-blue-600 hover:text-blue-700">View All</a>
             </div>
             <% if (upcomingAppointments.length===0) { %>
                 <div class="text-center py-8 text-gray-500">
@@ -186,24 +187,56 @@
                 </div>
                 <% } else { %>
                     <div class="space-y-3">
-                        <% upcomingAppointments.forEach(visit=> { %>
-                            <div class="p-3 bg-gray-50 rounded-lg">
+                        <% upcomingAppointments.forEach(appointment=> { %>
+                            <div class="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                                 <div class="flex items-center justify-between mb-1">
-                                    <a href="/patients/<%= visit.patient.id %>"
+                                    <a href="/patients/<%= appointment.patient.id %>"
                                         class="font-semibold text-gray-900 hover:text-blue-600 text-sm">
-                                        <%= visit.patient.name %>
+                                        <%= appointment.patient.name %>
                                     </a>
+                                    <span class="text-xs px-2 py-1 rounded <%= appointment.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800' %>">
+                                        <%= appointment.status %>
+                                    </span>
                                 </div>
                                 <p class="text-xs text-gray-600">
-                                    <%= new Date(visit.nextVisitDate).toLocaleDateString() %>
+                                    📅 <%= new Date(appointment.appointmentDate).toLocaleDateString() %>
+                                    at <%= appointment.appointmentTime %>
                                 </p>
                                 <p class="text-xs text-gray-500 mt-1">
-                                    <%= visit.doctor.name %>
+                                    👨‍⚕️ <%= appointment.doctor.name %>
                                 </p>
+                                <a href="/appointments/<%= appointment.id %>" class="text-xs text-blue-600 hover:text-blue-700 mt-2 inline-block">
+                                    View Details →
+                                </a>
                             </div>
                             <% }); %>
                     </div>
                     <% } %>
+
+            <!-- Upcoming Follow-ups (from Visit.nextVisitDate) -->
+            <% if (typeof upcomingFollowUps !== 'undefined' && upcomingFollowUps.length > 0) { %>
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-3">Upcoming Follow-ups</h3>
+                    <div class="space-y-2">
+                        <% upcomingFollowUps.forEach(visit=> { %>
+                            <div class="p-2 bg-blue-50 rounded-lg">
+                                <div class="flex items-center justify-between mb-1">
+                                    <a href="/patients/<%= visit.patient.id %>"
+                                        class="font-medium text-gray-900 hover:text-blue-600 text-xs">
+                                        <%= visit.patient.name %>
+                                    </a>
+                                </div>
+                                <p class="text-xs text-gray-600">
+                                    📅 <%= new Date(visit.nextVisitDate).toLocaleDateString() %>
+                                </p>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    👨‍⚕️ <%= visit.doctor.name %>
+                                </p>
+                            </div>
+                            <% }); %>
+                    </div>
+                </div>
+            <% } %>
         </div>
     </div>
 

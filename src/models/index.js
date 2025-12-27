@@ -86,6 +86,14 @@ User.hasMany(Appointment, {
 });
 Appointment.belongsTo(User, { foreignKey: 'doctorId', as: 'doctor' });
 
+// Visit-Appointment association
+Appointment.hasMany(Visit, {
+  foreignKey: 'appointmentId',
+  as: 'visits',
+  onDelete: 'SET NULL',
+});
+Visit.belongsTo(Appointment, { foreignKey: 'appointmentId', as: 'appointment' });
+
 // DoctorAvailability associations
 User.hasMany(DoctorAvailability, {
   foreignKey: 'doctorId',

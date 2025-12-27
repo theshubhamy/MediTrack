@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Visit, Patient, User, Prescription, File } = require('../models');
+const { Visit, Patient, User, Prescription, File, Appointment } = require('../models');
 const { requireAuth, requireClinicAccess, requireRole } = require('../middlewares/auth');
 const { validateVisit } = require('../middlewares/validation');
 const { ROLES, canWrite } = require('../utils/roles');
@@ -14,6 +14,7 @@ router.get('/new/:patientId', requireAuth, requireClinicAccess, requireRole(ROLE
   try {
     const clinicId = req.session.user.clinicId;
     const { patientId } = req.params;
+    const { doctorId, appointmentId } = req.query; // Get doctorId and appointmentId from query params
 
     // Verify patient belongs to clinic
     const patient = await Patient.findOne({
@@ -40,11 +41,24 @@ router.get('/new/:patientId', requireAuth, requireClinicAccess, requireRole(ROLE
       attributes: ['id', 'name']
     });
 
+    // Determine selected doctor: from query param, or current user if doctor, or null
+    let selectedDoctorId = null;
+    if (doctorId) {
+      // Verify the doctorId is valid and belongs to clinic
+      const doctor = doctors.find(d => d.id === doctorId);
+      if (doctor) {
+        selectedDoctorId = doctorId;
+      }
+    } else if (req.session.user.role === 'DOCTOR') {
+      selectedDoctorId = req.session.user.id;
+    }
+
     res.render('visits/new', {
       title: 'New Visit',
       patient,
       doctors,
-      selectedDoctorId: req.session.user.role === 'DOCTOR' ? req.session.user.id : null
+      selectedDoctorId,
+      appointmentId: appointmentId || null // Pass appointmentId to form
     });
   } catch (error) {
     console.error('New visit form error:', error);
@@ -63,7 +77,7 @@ router.get('/new/:patientId', requireAuth, requireClinicAccess, requireRole(ROLE
 router.post('/', requireAuth, requireClinicAccess, requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR, ROLES.STAFF), validateVisit, async (req, res) => {
   try {
     const clinicId = req.session.user.clinicId;
-    const { patientId, doctorId, symptoms, diagnosis, notes, nextVisitDate } = req.body;
+    const { patientId, doctorId, symptoms, diagnosis, notes, nextVisitDate, appointmentId } = req.body;
 
     // Verify patient belongs to clinic
     const patient = await Patient.findOne({
@@ -80,6 +94,26 @@ router.post('/', requireAuth, requireClinicAccess, requireRole(ROLES.CLINIC_ADMI
       });
     }
 
+    // If appointmentId is provided, verify it belongs to the clinic
+    if (appointmentId) {
+      const { Appointment } = require('../models');
+      const appointment = await Appointment.findOne({
+        where: {
+          id: appointmentId,
+          clinicId,
+          patientId
+        }
+      });
+
+      if (!appointment) {
+        return res.status(400).render('errors/400', {
+          title: 'Invalid Appointment',
+          layout: 'layouts/main',
+          error: 'The appointment does not exist or does not belong to this patient.'
+        });
+      }
+    }
+
     // Create visit
     const visit = await Visit.create({
       clinicId,
@@ -88,7 +122,8 @@ router.post('/', requireAuth, requireClinicAccess, requireRole(ROLES.CLINIC_ADMI
       symptoms: symptoms || null,
       diagnosis: diagnosis || null,
       notes: notes || null,
-      nextVisitDate: nextVisitDate ? new Date(nextVisitDate) : null
+      nextVisitDate: nextVisitDate ? new Date(nextVisitDate) : null,
+      appointmentId: appointmentId || null
     });
 
     res.redirect(`/visits/${visit.id}`);
@@ -139,6 +174,10 @@ router.get('/:id', requireAuth, requireClinicAccess, async (req, res) => {
       }, {
         model: File,
         as: 'files'
+      }, {
+        model: Appointment,
+        as: 'appointment',
+        attributes: ['id', 'appointmentDate', 'appointmentTime', 'status']
       }]
     });
 

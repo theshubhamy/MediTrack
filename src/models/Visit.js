@@ -53,6 +53,15 @@ module.exports = sequelize => {
         allowNull: true,
         field: 'next_visit_date',
       },
+      appointmentId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        field: 'appointment_id',
+        references: {
+          model: 'appointments',
+          key: 'id',
+        },
+      },
     },
     {
       tableName: 'visits',

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Patient, Visit, User, Prescription } = require('../models');
+const { Patient, Visit, User, Prescription, Appointment } = require('../models');
 const { requireAuth, requireClinicAccess } = require('../middlewares/auth');
 const { ROLES, canViewAllData } = require('../utils/roles');
 const { Op } = require('sequelize');
@@ -112,8 +112,47 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
       ],
     });
 
-    // Get upcoming appointments (nextVisitDate)
-    const upcomingAppointments = await Visit.findAll({
+    // Get upcoming appointments from Appointments table
+    const appointmentWhere = { clinicId };
+
+    // Doctors see only their appointments
+    if (userRole === ROLES.DOCTOR || userRole === ROLES.READ_ONLY) {
+      appointmentWhere.doctorId = userId;
+    }
+
+    // Only show scheduled/confirmed appointments (not completed/cancelled)
+    appointmentWhere.status = {
+      [Op.in]: ['SCHEDULED', 'CONFIRMED']
+    };
+
+    // Get appointments from today onwards
+    appointmentWhere.appointmentDate = {
+      [Op.gte]: today.toISOString().split('T')[0] // DATEONLY format
+    };
+
+    const upcomingAppointments = await Appointment.findAll({
+      where: appointmentWhere,
+      limit: 5,
+      order: [
+        ['appointment_date', 'ASC'],
+        ['appointment_time', 'ASC']
+      ],
+      include: [
+        {
+          model: Patient,
+          as: 'patient',
+          attributes: ['id', 'name', 'phone'],
+        },
+        {
+          model: User,
+          as: 'doctor',
+          attributes: ['id', 'name'],
+        },
+      ],
+    });
+
+    // Also get upcoming follow-ups from Visit.nextVisitDate
+    const upcomingFollowUps = await Visit.findAll({
       where: {
         ...visitWhere,
         nextVisitDate: {
@@ -242,6 +281,7 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
       recentVisits,
       todayVisits,
       upcomingAppointments,
+      upcomingFollowUps,
       recentPatients,
       visitTrends,
       userRole,

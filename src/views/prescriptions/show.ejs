@@ -9,7 +9,8 @@
                 class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                 🖨️ Print
             </a>
-            <a href="/prescriptions" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+            <a href="/prescriptions"
+                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
                 ← Back
             </a>
         </div>
@@ -30,95 +31,112 @@
                 </p>
                 <% if (patient.age) { %>
                     <p class="text-sm text-gray-600">Age: <%= patient.age %> years</p>
-                <% } %>
-                <% if (patient.phone) { %>
-                    <p class="text-sm text-gray-600">Phone: <%= patient.phone %></p>
-                <% } %>
+                    <% } %>
+                        <% if (patient.phone) { %>
+                            <p class="text-sm text-gray-600">Phone: <%= patient.phone %>
+                            </p>
+                            <% } %>
             </div>
 
             <!-- Medicines -->
             <div class="mb-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-3">Medicines</h3>
-                <% if (Array.isArray(prescription.medicines) && prescription.medicines.length > 0) { %>
+                <% if (Array.isArray(prescription.medicines) && prescription.medicines.length> 0) { %>
                     <div class="space-y-3">
-                        <% prescription.medicines.forEach((medicine, index) => { %>
+                        <% prescription.medicines.forEach((medicine, index)=> { %>
                             <div class="border border-gray-200 rounded-lg p-4">
                                 <div class="flex justify-between items-start mb-2">
                                     <div>
                                         <p class="font-semibold text-gray-900">
                                             <%= index + 1 %>. <%= medicine.name || 'Medicine' %>
-                                            <% if (medicine.strength) { %>
-                                                <span class="text-gray-600">(<%= medicine.strength %>)</span>
-                                            <% } %>
+                                                    <% if (medicine.strength) { %>
+                                                        <span class="text-gray-600">(<%= medicine.strength %>)</span>
+                                                        <% } %>
                                         </p>
                                         <% if (medicine.genericName) { %>
-                                            <p class="text-sm text-gray-600">Generic: <%= medicine.genericName %></p>
-                                        <% } %>
+                                            <p class="text-sm text-gray-600">Generic: <%= medicine.genericName %>
+                                            </p>
+                                            <% } %>
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-2 gap-2 text-sm">
                                     <% if (medicine.dosage) { %>
                                         <div>
                                             <span class="text-gray-500">Dosage:</span>
-                                            <span class="text-gray-900 font-medium"><%= medicine.dosage %></span>
+                                            <span class="text-gray-900 font-medium">
+                                                <%= medicine.dosage %>
+                                            </span>
                                         </div>
-                                    <% } %>
-                                    <% if (medicine.frequency) { %>
-                                        <div>
-                                            <span class="text-gray-500">Frequency:</span>
-                                            <span class="text-gray-900 font-medium"><%= medicine.frequency %></span>
-                                        </div>
-                                    <% } %>
-                                    <% if (medicine.duration) { %>
-                                        <div>
-                                            <span class="text-gray-500">Duration:</span>
-                                            <span class="text-gray-900 font-medium"><%= medicine.duration %></span>
-                                        </div>
-                                    <% } %>
-                                    <% if (medicine.quantity) { %>
-                                        <div>
-                                            <span class="text-gray-500">Quantity:</span>
-                                            <span class="text-gray-900 font-medium"><%= medicine.quantity %></span>
-                                        </div>
-                                    <% } %>
+                                        <% } %>
+                                            <% if (medicine.frequency) { %>
+                                                <div>
+                                                    <span class="text-gray-500">Frequency:</span>
+                                                    <span class="text-gray-900 font-medium">
+                                                        <%= medicine.frequency %>
+                                                    </span>
+                                                </div>
+                                                <% } %>
+                                                    <% if (medicine.duration) { %>
+                                                        <div>
+                                                            <span class="text-gray-500">Duration:</span>
+                                                            <span class="text-gray-900 font-medium">
+                                                                <%= medicine.duration %>
+                                                            </span>
+                                                        </div>
+                                                        <% } %>
+                                                            <% if (medicine.quantity) { %>
+                                                                <div>
+                                                                    <span class="text-gray-500">Quantity:</span>
+                                                                    <span class="text-gray-900 font-medium">
+                                                                        <%= medicine.quantity %>
+                                                                    </span>
+                                                                </div>
+                                                                <% } %>
                                 </div>
                                 <% if (medicine.instructions) { %>
                                     <div class="mt-2">
                                         <span class="text-gray-500 text-sm">Instructions:</span>
-                                        <p class="text-gray-900 text-sm"><%= medicine.instructions %></p>
+                                        <p class="text-gray-900 text-sm">
+                                            <%= medicine.instructions %>
+                                        </p>
                                     </div>
-                                <% } %>
+                                    <% } %>
                             </div>
-                        <% }); %>
+                            <% }); %>
                     </div>
-                <% } else { %>
-                    <p class="text-gray-500">No medicines listed</p>
-                <% } %>
+                    <% } else { %>
+                        <p class="text-gray-500">No medicines listed</p>
+                        <% } %>
             </div>
 
             <!-- Advice -->
             <% if (prescription.advice) { %>
                 <div class="mb-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-2">Advice</h3>
-                    <p class="text-gray-700"><%= prescription.advice %></p>
+                    <p class="text-gray-700">
+                        <%= prescription.advice %>
+                    </p>
                 </div>
-            <% } %>
+                <% } %>
 
-            <!-- Doctor Signature -->
-            <% if (prescription.doctorSignature) { %>
-                <div class="mb-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Doctor Signature</h3>
-                    <div class="border border-gray-200 rounded-lg p-4">
-                        <img src="<%= prescription.doctorSignature %>" alt="Doctor Signature" class="max-w-xs">
-                        <% if (prescription.doctorName) { %>
-                            <p class="text-sm text-gray-600 mt-2">Dr. <%= prescription.doctorName %></p>
+                    <!-- Doctor Signature -->
+                    <% if (prescription.doctorSignature) { %>
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">Doctor Signature</h3>
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <img src="<%= prescription.doctorSignature %>" alt="Doctor Signature" class="max-w-xs">
+                                <% if (prescription.doctorName) { %>
+                                    <p class="text-sm text-gray-600 mt-2">
+                                        <%= prescription.doctorName %>
+                                    </p>
+                                    <% } %>
+                                        <% if (prescription.doctorLicense) { %>
+                                            <p class="text-xs text-gray-500">License: <%= prescription.doctorLicense %>
+                                            </p>
+                                            <% } %>
+                            </div>
+                        </div>
                         <% } %>
-                        <% if (prescription.doctorLicense) { %>
-                            <p class="text-xs text-gray-500">License: <%= prescription.doctorLicense %></p>
-                        <% } %>
-                    </div>
-                </div>
-            <% } %>
         </div>
 
         <!-- Sidebar -->
@@ -128,12 +146,16 @@
             <div class="space-y-4">
                 <div>
                     <p class="text-sm font-medium text-gray-500">Date</p>
-                    <p class="text-gray-900"><%= new Date(prescription.created_at).toLocaleDateString() %></p>
+                    <p class="text-gray-900">
+                        <%= new Date(prescription.created_at).toLocaleDateString() %>
+                    </p>
                 </div>
 
                 <div>
                     <p class="text-sm font-medium text-gray-500">Doctor</p>
-                    <p class="text-gray-900"><%= doctor.name %></p>
+                    <p class="text-gray-900">
+                        <%= doctor.name %>
+                    </p>
                 </div>
 
                 <div>
@@ -153,4 +175,3 @@
         </div>
     </div>
 </div>
-
