@@ -17,19 +17,21 @@
                 <span class="mr-2">👤</span>
                 <span>My Profile</span>
             </a>
-            <a href="/patients/new"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
-                <span class="mr-2">➕</span>
-                <span>New Patient</span>
-            </a>
-            <% if (typeof canCreateVisits !=='undefined' && canCreateVisits()) { %>
-
-                <a href="/visits/new"
-                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
-                    <span class="mr-2">📋</span>
-                    <span>New Visit</span>
+            <% if (typeof canCreatePatients !=='undefined' && canCreatePatients()) { %>
+                <a href="/patients/new"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                    <span class="mr-2">➕</span>
+                    <span>New Patient</span>
                 </a>
                 <% } %>
+                    <% if (typeof canCreateVisits !=='undefined' && canCreateVisits()) { %>
+
+                        <a href="/visits/new"
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                            <span class="mr-2">📋</span>
+                            <span>New Visit</span>
+                        </a>
+                        <% } %>
         </div>
     </div>
 
