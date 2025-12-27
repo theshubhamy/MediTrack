@@ -1,7 +1,17 @@
 <div>
-    <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-900">My Profile</h1>
-        <p class="text-gray-600 mt-2">Update your personal information</p>
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">My Profile</h1>
+            <p class="text-gray-600 mt-2">Manage your personal information and preferences</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="/settings/password" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm">
+                🔒 Change Password
+            </a>
+            <a href="/settings/notifications" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm">
+                🔔 Notifications
+            </a>
+        </div>
     </div>
 
     <% if (typeof success !== 'undefined' && success) { %>
@@ -9,6 +19,37 @@
             <%= success %>
         </div>
     <% } %>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <a href="/settings/profile" class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow border-2 border-blue-500">
+            <div class="flex items-center">
+                <span class="text-2xl mr-3">👤</span>
+                <div>
+                    <h3 class="font-semibold text-gray-900">Profile</h3>
+                    <p class="text-xs text-gray-600">Personal info</p>
+                </div>
+            </div>
+        </a>
+        <a href="/settings/password" class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+            <div class="flex items-center">
+                <span class="text-2xl mr-3">🔒</span>
+                <div>
+                    <h3 class="font-semibold text-gray-900">Password</h3>
+                    <p class="text-xs text-gray-600">Change password</p>
+                </div>
+            </div>
+        </a>
+        <a href="/settings/notifications" class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+            <div class="flex items-center">
+                <span class="text-2xl mr-3">🔔</span>
+                <div>
+                    <h3 class="font-semibold text-gray-900">Notifications</h3>
+                    <p class="text-xs text-gray-600">Preferences</p>
+                </div>
+            </div>
+        </a>
+    </div>
 
     <div class="bg-white rounded-lg shadow-md p-6">
         <form method="POST" action="/settings/profile">
@@ -67,11 +108,54 @@
                 </div>
             </div>
 
+            <!-- Notification Settings Section -->
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Notification Preferences</h3>
+                        <p class="text-sm text-gray-600">Manage how you receive notifications</p>
+                    </div>
+                    <a href="/settings/notifications" class="text-sm text-blue-600 hover:text-blue-700">
+                        Advanced Settings →
+                    </a>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700">Email Notifications</label>
+                            <p class="text-xs text-gray-500"><%= user.emailNotificationsEnabled ? 'Enabled' : 'Disabled' %></p>
+                        </div>
+                        <span class="text-lg"><%= user.emailNotificationsEnabled ? '✅' : '❌' %></span>
+                    </div>
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700">SMS Notifications</label>
+                            <p class="text-xs text-gray-500"><%= user.smsNotificationsEnabled ? 'Enabled' : 'Disabled' %></p>
+                        </div>
+                        <span class="text-lg"><%= user.smsNotificationsEnabled ? '✅' : '❌' %></span>
+                    </div>
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700">Appointment Reminders</label>
+                            <p class="text-xs text-gray-500"><%= user.appointmentReminders ? 'Enabled' : 'Disabled' %></p>
+                        </div>
+                        <span class="text-lg"><%= user.appointmentReminders ? '✅' : '❌' %></span>
+                    </div>
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700">Visit Reminders</label>
+                            <p class="text-xs text-gray-500"><%= user.visitReminders ? 'Enabled' : 'Disabled' %></p>
+                        </div>
+                        <span class="text-lg"><%= user.visitReminders ? '✅' : '❌' %></span>
+                    </div>
+                </div>
+            </div>
+
             <div class="mt-6 flex gap-4">
                 <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                     Save Changes
                 </button>
-                <a href="/settings" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                <a href="/dashboard" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
                     Cancel
                 </a>
             </div>

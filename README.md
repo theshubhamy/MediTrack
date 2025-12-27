@@ -255,6 +255,8 @@ The system supports four user roles with different permissions:
 - ✅ View all patients
 - ✅ Create and manage visits (assigned to them)
 - ✅ View only their own visits
+- ✅ Manage own profile (name, phone, preferences, notifications)
+- ✅ Change own password
 - ❌ Cannot manage doctors
 - ❌ Cannot access settings/billing
 - ❌ Cannot invite other doctors
@@ -275,12 +277,15 @@ The system supports four user roles with different permissions:
 
 ### 3. STAFF 👤
 
-**Access to patient management features**
+**Access to administrative and scheduling features**
 
-- ✅ View all patients and visits
+- ✅ View all patients, visits, and appointments
 - ✅ Create and manage patients
-- ✅ Create and manage visits
+- ✅ Create and manage appointments
 - ✅ View all doctors
+- ✅ View all statistics and reports
+- ❌ Cannot create visits (medical documentation)
+- ❌ Cannot create prescriptions
 - ❌ Cannot manage doctors
 - ❌ Cannot access settings/billing
 
@@ -288,12 +293,59 @@ The system supports four user roles with different permissions:
 
 - Dashboard
 - Patients
+- Appointments
 - Doctors (view only)
 
 **Dashboard Data:**
 
 - All clinic statistics
 - All recent visits
+- All appointments
+
+---
+
+## Role Permissions Summary
+
+| Action                      | CLINIC_ADMIN | DOCTOR            | STAFF        |
+| --------------------------- | ------------ | ----------------- | ------------ |
+| **Patient Management**      |
+| Create Patient              | ✅ Yes       | ✅ Yes            | ✅ Yes       |
+| Edit Patient                | ✅ Yes       | ✅ Yes            | ✅ Yes       |
+| View Patients               | ✅ Yes (All) | ✅ Yes (All)      | ✅ Yes (All) |
+| **Visit Management**        |
+| Create Visit                | ✅ Yes       | ✅ Yes            | ❌ No        |
+| Edit Visit                  | ✅ Yes       | ✅ Yes (Own only) | ❌ No        |
+| View Visits                 | ✅ Yes (All) | ✅ Yes (Own only) | ✅ Yes (All) |
+| **Prescription Management** |
+| Create Prescription         | ✅ Yes       | ✅ Yes            | ❌ No        |
+| Edit Prescription           | ✅ Yes       | ✅ Yes (Own only) | ❌ No        |
+| View Prescriptions          | ✅ Yes (All) | ✅ Yes (Own only) | ✅ Yes (All) |
+| **Appointment Management**  |
+| Create Appointment          | ✅ Yes       | ✅ Yes            | ✅ Yes       |
+| Edit Appointment            | ✅ Yes       | ✅ Yes (Own only) | ✅ Yes       |
+| Cancel Appointment          | ✅ Yes       | ✅ Yes (Own only) | ✅ Yes       |
+| View Appointments           | ✅ Yes (All) | ✅ Yes (Own only) | ✅ Yes (All) |
+| **Doctor Management**       |
+| Invite Doctors              | ✅ Yes       | ❌ No             | ❌ No        |
+| Manage Doctors              | ✅ Yes       | ❌ No             | ❌ No        |
+| View Doctors                | ✅ Yes       | ✅ Yes            | ✅ Yes       |
+| **Clinic Management**       |
+| Manage Clinic Settings      | ✅ Yes       | ❌ No             | ❌ No        |
+| Access Billing              | ✅ Yes       | ❌ No             | ❌ No        |
+| View All Statistics         | ✅ Yes       | ❌ No             | ✅ Yes       |
+| **Data Access**             |
+| View All Data               | ✅ Yes       | ❌ No             | ✅ Yes       |
+| View Own Data Only          | ❌ No        | ✅ Yes            | ❌ No        |
+| **Profile Management**      |
+| Manage Own Profile          | ✅ Yes       | ✅ Yes            | ✅ Yes       |
+| Change Password             | ✅ Yes       | ✅ Yes            | ✅ Yes       |
+| Manage Notifications        | ✅ Yes       | ✅ Yes            | ✅ Yes       |
+
+### Notes:
+
+- **DOCTOR**: Can only view/edit their own visits, prescriptions, and appointments
+- **STAFF**: Can view all data but cannot create medical records (visits/prescriptions)
+- **CLINIC_ADMIN**: Full access to all features and settings
 
 ---
 

@@ -613,7 +613,7 @@ router.get(
   '/new/:visitId',
   requireAuth,
   requireClinicAccess,
-  requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR, ROLES.STAFF),
+  requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR),
   async (req, res) => {
     try {
       const clinicId = req.session.user.clinicId;
@@ -696,7 +696,7 @@ router.post(
   '/',
   requireAuth,
   requireClinicAccess,
-  requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR, ROLES.STAFF),
+  requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR),
   async (req, res) => {
     try {
       const clinicId = req.session.user.clinicId;
@@ -775,7 +775,7 @@ router.get(
   '/:id/edit',
   requireAuth,
   requireClinicAccess,
-  requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR, ROLES.STAFF),
+  requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR),
   async (req, res) => {
     try {
       const clinicId = req.session.user.clinicId;
@@ -858,7 +858,7 @@ router.post(
   '/:id',
   requireAuth,
   requireClinicAccess,
-  requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR, ROLES.STAFF),
+  requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR),
   async (req, res) => {
     try {
       const clinicId = req.session.user.clinicId;

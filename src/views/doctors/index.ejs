@@ -1,9 +1,14 @@
 <div>
     <div class="page-header">
         <h1 class="text-3xl font-bold text-gray-900">Doctors</h1>
-        <% if (typeof user !=='undefined' && user && user.role==='CLINIC_ADMIN' ) { %>
-            <a href="/doctors/invite" class="btn btn-primary">Invite Doctor</a>
+        <div class="flex gap-2">
+            <% if (typeof user !=='undefined' && user && user.role==='DOCTOR' ) { %>
+                <a href="/settings/profile" class="btn btn-secondary">👤 My Profile</a>
             <% } %>
+            <% if (typeof user !=='undefined' && user && user.role==='CLINIC_ADMIN' ) { %>
+                <a href="/doctors/invite" class="btn btn-primary">Invite Doctor</a>
+            <% } %>
+        </div>
     </div>
 
     <% if (doctors.length===0) { %>
@@ -58,7 +63,7 @@
                                         <% if (canManageDoctors || doctor.id === currentUserId) { %>
                                             <a href="/doctors/<%= doctor.id %>/edit"
                                                 class="text-blue-600 hover:text-blue-700 font-medium">
-                                                Edit
+                                                <%= doctor.id === currentUserId ? 'Edit My Profile' : 'Edit' %>
                                             </a>
                                         <% } else { %>
                                             <span class="text-gray-400">-</span>

@@ -116,7 +116,9 @@ router.post('/clinic', requireAuth, requireClinicAccess, requireRole(ROLES.CLINI
  */
 router.get('/profile', requireAuth, requireClinicAccess, async (req, res) => {
   try {
-    const user = await User.findByPk(req.session.user.id);
+    const user = await User.findByPk(req.session.user.id, {
+      attributes: ['id', 'name', 'email', 'phone', 'role', 'preferredLanguage', 'timezone', 'emailNotificationsEnabled', 'smsNotificationsEnabled', 'appointmentReminders', 'visitReminders']
+    });
 
     res.render('settings/profile', {
       title: 'My Profile',

@@ -65,7 +65,7 @@ const canManageDoctors = (user) => {
  */
 const canCreateVisits = (user) => {
   if (!user) return false;
-  return [ROLES.CLINIC_ADMIN, ROLES.DOCTOR, ROLES.STAFF].includes(user.role);
+  return [ROLES.CLINIC_ADMIN, ROLES.DOCTOR].includes(user.role);
 };
 
 /**

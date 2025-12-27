@@ -10,7 +10,7 @@ const { Op } = require('sequelize');
  * GET /visits/new/:patientId
  * Show new visit form
  */
-router.get('/new/:patientId', requireAuth, requireClinicAccess, requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR, ROLES.STAFF), async (req, res) => {
+router.get('/new/:patientId', requireAuth, requireClinicAccess, requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR), async (req, res) => {
   try {
     const clinicId = req.session.user.clinicId;
     const { patientId } = req.params;
@@ -74,7 +74,7 @@ router.get('/new/:patientId', requireAuth, requireClinicAccess, requireRole(ROLE
  * POST /visits
  * Create new visit
  */
-router.post('/', requireAuth, requireClinicAccess, requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR, ROLES.STAFF), validateVisit, async (req, res) => {
+router.post('/', requireAuth, requireClinicAccess, requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR), validateVisit, async (req, res) => {
   try {
     const clinicId = req.session.user.clinicId;
     const { patientId, doctorId, symptoms, diagnosis, notes, nextVisitDate, appointmentId } = req.body;
