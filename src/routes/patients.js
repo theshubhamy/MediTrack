@@ -103,7 +103,7 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
 
 /**
  * GET /patients/new
- * Show new patient form (READ_ONLY cannot access)
+ * Show new patient form
  */
 router.get(
   '/new',
@@ -119,7 +119,7 @@ router.get(
 
 /**
  * POST /patients
- * Create new patient (READ_ONLY cannot access)
+ * Create new patient
  */
 router.post(
   '/',

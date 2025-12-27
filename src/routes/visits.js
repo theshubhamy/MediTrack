@@ -8,7 +8,7 @@ const { Op } = require('sequelize');
 
 /**
  * GET /visits/new/:patientId
- * Show new visit form (READ_ONLY cannot access)
+ * Show new visit form
  */
 router.get('/new/:patientId', requireAuth, requireClinicAccess, requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR, ROLES.STAFF), async (req, res) => {
   try {
@@ -72,7 +72,7 @@ router.get('/new/:patientId', requireAuth, requireClinicAccess, requireRole(ROLE
 
 /**
  * POST /visits
- * Create new visit (READ_ONLY cannot access)
+ * Create new visit
  */
 router.post('/', requireAuth, requireClinicAccess, requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR, ROLES.STAFF), validateVisit, async (req, res) => {
   try {
@@ -154,8 +154,8 @@ router.get('/:id', requireAuth, requireClinicAccess, async (req, res) => {
       clinicId // Multi-tenant isolation
     };
 
-    // Doctors and READ_ONLY can only see their own visits
-    if (userRole === ROLES.DOCTOR || userRole === ROLES.READ_ONLY) {
+    // Doctors can only see their own visits
+    if (userRole === ROLES.DOCTOR) {
       where.doctorId = userId;
     }
 
@@ -228,7 +228,7 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
     const where = { clinicId };
 
     // Role-based filtering
-    if (userRole === ROLES.DOCTOR || userRole === ROLES.READ_ONLY) {
+    if (userRole === ROLES.DOCTOR) {
       where.doctorId = userId;
     }
 

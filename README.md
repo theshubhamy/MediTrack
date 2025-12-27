@@ -56,7 +56,7 @@ See [SETUP.md](./SETUP.md) for detailed setup instructions.
 - **Visit History** - Multiple visits per patient with doctor tracking
 - **Digital Prescriptions** - Create, print, and share prescriptions
 - **Follow-up Reminders** - Automatic SMS/WhatsApp reminders
-- **Role-Based Access** - CLINIC_ADMIN, DOCTOR, STAFF, READ_ONLY roles
+- **Role-Based Access** - CLINIC_ADMIN, DOCTOR, STAFF roles
 
 See [ROLES.md](./ROLES.md) for role permissions.
 
@@ -96,7 +96,6 @@ After seeding the database:
 - **CLINIC_ADMIN:** `admin@clinic.com` / `admin123`
 - **DOCTOR:** `doctor@clinic.com` / `admin123`
 - **STAFF:** `staff@clinic.com` / `admin123`
-- **READ_ONLY:** `readonly@clinic.com` / `admin123`
 
 ⚠️ **Change these in production!**
 
@@ -298,28 +297,6 @@ The system supports four user roles with different permissions:
 
 ---
 
-### 4. READ_ONLY 👁️
-
-**View-only access**
-
-- ✅ View patients
-- ✅ View visits (only their own if they're a doctor)
-- ❌ Cannot create or edit anything
-- ❌ Cannot access settings
-- ❌ Cannot manage doctors
-
-**Navigation Access:**
-
-- Dashboard (limited data)
-- Patients (view only)
-
-**Dashboard Data:**
-
-- Limited statistics
-- Only their own visits (if assigned as doctor)
-
----
-
 ## Role-Based Features
 
 ### Login Redirect
@@ -330,7 +307,6 @@ All roles are redirected to `/dashboard` after login, but see different data bas
 
 - **CLINIC_ADMIN & STAFF**: See all clinic data
 - **DOCTOR**: See only their own visits
-- **READ_ONLY**: See only their own visits (if assigned as doctor)
 
 ### Route Protection
 
@@ -344,7 +320,6 @@ Routes are protected using middleware:
 
 UI elements are conditionally rendered based on role:
 
-- Action buttons (Create, Edit) hidden for READ_ONLY
 - Navigation items hidden based on permissions
 - Role badge displayed in navigation
 
@@ -358,7 +333,6 @@ After running the seed script (`npm run seed`), you can test with these accounts
 CLINIC_ADMIN: admin@clinic.com / admin123
 DOCTOR:       doctor@clinic.com / admin123
 STAFF:        staff@clinic.com / admin123
-READ_ONLY:    readonly@clinic.com / admin123
 ```
 
 ---

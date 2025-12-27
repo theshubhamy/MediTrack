@@ -21,7 +21,7 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
     const where = { clinicId };
 
     // Doctors see only their appointments
-    if (userRole === ROLES.DOCTOR || userRole === ROLES.READ_ONLY) {
+    if (userRole === ROLES.DOCTOR) {
       where.doctorId = userId;
     }
 
@@ -107,7 +107,7 @@ router.get('/calendar', requireAuth, requireClinicAccess, async (req, res) => {
       },
     };
 
-    if (userRole === ROLES.DOCTOR || userRole === ROLES.READ_ONLY) {
+    if (userRole === ROLES.DOCTOR) {
       where.doctorId = userId;
     }
 
@@ -467,7 +467,7 @@ router.get('/:id', requireAuth, requireClinicAccess, async (req, res) => {
     }
 
     // Check if user has access (doctors can only see their own)
-    if ((userRole === ROLES.DOCTOR || userRole === ROLES.READ_ONLY) && appointment.doctorId !== userId) {
+    if (userRole === ROLES.DOCTOR && appointment.doctorId !== userId) {
       return res.status(403).render('errors/403', {
         title: 'Access Denied',
         layout: 'layouts/main',

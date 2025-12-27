@@ -8,7 +8,11 @@ const {
   Medicine,
   PrescriptionTemplate,
 } = require('../models');
-const { requireAuth, requireClinicAccess } = require('../middlewares/auth');
+const {
+  requireAuth,
+  requireClinicAccess,
+  requireRole,
+} = require('../middlewares/auth');
 const { ROLES, canViewAllData } = require('../utils/roles');
 const { Op } = require('sequelize');
 
@@ -26,7 +30,7 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
 
     // Build where clause for visits
     const visitWhere = { clinicId };
-    if (userRole === ROLES.DOCTOR || userRole === ROLES.READ_ONLY) {
+    if (userRole === ROLES.DOCTOR) {
       visitWhere.doctorId = userId;
     }
     if (patientId) {
@@ -479,10 +483,7 @@ router.get('/:id', requireAuth, requireClinicAccess, async (req, res) => {
     }
 
     // Check access
-    if (
-      (userRole === ROLES.DOCTOR || userRole === ROLES.READ_ONLY) &&
-      prescription.visit.doctorId !== userId
-    ) {
+    if (userRole === ROLES.DOCTOR && prescription.visit.doctorId !== userId) {
       return res.status(403).render('errors/403', {
         title: 'Access Denied',
         layout: 'layouts/main',
@@ -612,6 +613,7 @@ router.get(
   '/new/:visitId',
   requireAuth,
   requireClinicAccess,
+  requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR, ROLES.STAFF),
   async (req, res) => {
     try {
       const clinicId = req.session.user.clinicId;
@@ -690,231 +692,249 @@ router.get(
  * POST /prescriptions
  * Create new prescription
  */
-router.post('/', requireAuth, requireClinicAccess, async (req, res) => {
-  try {
-    const clinicId = req.session.user.clinicId;
-    const {
-      visitId,
-      medicines,
-      advice,
-      doctorSignature,
-      doctorName,
-      doctorLicense,
-      templateId,
-    } = req.body;
+router.post(
+  '/',
+  requireAuth,
+  requireClinicAccess,
+  requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR, ROLES.STAFF),
+  async (req, res) => {
+    try {
+      const clinicId = req.session.user.clinicId;
+      const {
+        visitId,
+        medicines,
+        advice,
+        doctorSignature,
+        doctorName,
+        doctorLicense,
+        templateId,
+      } = req.body;
 
-    // Verify visit belongs to clinic
-    const visit = await Visit.findOne({
-      where: { id: visitId, clinicId },
-    });
+      // Verify visit belongs to clinic
+      const visit = await Visit.findOne({
+        where: { id: visitId, clinicId },
+      });
 
-    if (!visit) {
-      return res.status(404).render('errors/404', {
-        title: 'Visit Not Found',
+      if (!visit) {
+        return res.status(404).render('errors/404', {
+          title: 'Visit Not Found',
+          layout: 'layouts/main',
+        });
+      }
+
+      // Check if prescription already exists
+      const existingPrescription = await Prescription.findOne({
+        where: { visitId },
+      });
+
+      if (existingPrescription) {
+        return res.redirect(`/prescriptions/${existingPrescription.id}/edit`);
+      }
+
+      // Parse medicines if it's a string
+      let medicinesArray = [];
+      if (typeof medicines === 'string') {
+        try {
+          medicinesArray = JSON.parse(medicines);
+        } catch (e) {
+          medicinesArray = [];
+        }
+      } else if (Array.isArray(medicines)) {
+        medicinesArray = medicines;
+      }
+
+      // Create prescription
+      const prescription = await Prescription.create({
+        visitId,
+        medicines: medicinesArray,
+        advice: advice || null,
+        doctorSignature: doctorSignature || null,
+        doctorName: doctorName || null,
+        doctorLicense: doctorLicense || null,
+        templateId: templateId || null,
+      });
+
+      res.redirect(`/prescriptions/${prescription.id}`);
+    } catch (error) {
+      console.error('Create prescription error:', error);
+      res.status(500).render('errors/500', {
+        title: 'Server Error',
         layout: 'layouts/main',
+        error: process.env.NODE_ENV === 'development' ? error : {},
+        NODE_ENV: process.env.NODE_ENV,
       });
     }
-
-    // Check if prescription already exists
-    const existingPrescription = await Prescription.findOne({
-      where: { visitId },
-    });
-
-    if (existingPrescription) {
-      return res.redirect(`/prescriptions/${existingPrescription.id}/edit`);
-    }
-
-    // Parse medicines if it's a string
-    let medicinesArray = [];
-    if (typeof medicines === 'string') {
-      try {
-        medicinesArray = JSON.parse(medicines);
-      } catch (e) {
-        medicinesArray = [];
-      }
-    } else if (Array.isArray(medicines)) {
-      medicinesArray = medicines;
-    }
-
-    // Create prescription
-    const prescription = await Prescription.create({
-      visitId,
-      medicines: medicinesArray,
-      advice: advice || null,
-      doctorSignature: doctorSignature || null,
-      doctorName: doctorName || null,
-      doctorLicense: doctorLicense || null,
-      templateId: templateId || null,
-    });
-
-    res.redirect(`/prescriptions/${prescription.id}`);
-  } catch (error) {
-    console.error('Create prescription error:', error);
-    res.status(500).render('errors/500', {
-      title: 'Server Error',
-      layout: 'layouts/main',
-      error: process.env.NODE_ENV === 'development' ? error : {},
-      NODE_ENV: process.env.NODE_ENV,
-    });
-  }
-});
+  },
+);
 
 /**
  * GET /prescriptions/:id/edit
  * Show edit prescription form
  */
-router.get('/:id/edit', requireAuth, requireClinicAccess, async (req, res) => {
-  try {
-    const clinicId = req.session.user.clinicId;
-    const userRole = req.session.user.role;
-    const userId = req.session.user.id;
+router.get(
+  '/:id/edit',
+  requireAuth,
+  requireClinicAccess,
+  requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR, ROLES.STAFF),
+  async (req, res) => {
+    try {
+      const clinicId = req.session.user.clinicId;
+      const userRole = req.session.user.role;
+      const userId = req.session.user.id;
 
-    const prescription = await Prescription.findOne({
-      where: { id: req.params.id },
-      include: [
-        {
-          model: Visit,
-          as: 'visit',
-          where: { clinicId },
-          include: [
-            {
-              model: Patient,
-              as: 'patient',
-            },
-            {
-              model: User,
-              as: 'doctor',
-            },
-          ],
-        },
-      ],
-    });
+      const prescription = await Prescription.findOne({
+        where: { id: req.params.id },
+        include: [
+          {
+            model: Visit,
+            as: 'visit',
+            where: { clinicId },
+            include: [
+              {
+                model: Patient,
+                as: 'patient',
+              },
+              {
+                model: User,
+                as: 'doctor',
+              },
+            ],
+          },
+        ],
+      });
 
-    if (!prescription) {
-      return res.status(404).render('errors/404', {
-        title: 'Prescription Not Found',
+      if (!prescription) {
+        return res.status(404).render('errors/404', {
+          title: 'Prescription Not Found',
+          layout: 'layouts/main',
+        });
+      }
+
+      // Check access
+      if (
+        (userRole === ROLES.DOCTOR || userRole === ROLES.READ_ONLY) &&
+        prescription.visit.doctorId !== userId
+      ) {
+        return res.status(403).render('errors/403', {
+          title: 'Access Denied',
+          layout: 'layouts/main',
+        });
+      }
+
+      // Get templates
+      const templates = await PrescriptionTemplate.findAll({
+        where: { clinicId },
+        order: [
+          ['is_default', 'DESC'],
+          ['name', 'ASC'],
+        ],
+      });
+
+      res.render('prescriptions/edit', {
+        title: 'Edit Prescription',
+        prescription,
+        visit: prescription.visit,
+        patient: prescription.visit.patient,
+        doctor: prescription.visit.doctor,
+        templates,
+      });
+    } catch (error) {
+      console.error('Edit prescription form error:', error);
+      res.status(500).render('errors/500', {
+        title: 'Server Error',
         layout: 'layouts/main',
+        error: process.env.NODE_ENV === 'development' ? error : {},
+        NODE_ENV: process.env.NODE_ENV,
       });
     }
-
-    // Check access
-    if (
-      (userRole === ROLES.DOCTOR || userRole === ROLES.READ_ONLY) &&
-      prescription.visit.doctorId !== userId
-    ) {
-      return res.status(403).render('errors/403', {
-        title: 'Access Denied',
-        layout: 'layouts/main',
-      });
-    }
-
-    // Get templates
-    const templates = await PrescriptionTemplate.findAll({
-      where: { clinicId },
-      order: [
-        ['is_default', 'DESC'],
-        ['name', 'ASC'],
-      ],
-    });
-
-    res.render('prescriptions/edit', {
-      title: 'Edit Prescription',
-      prescription,
-      visit: prescription.visit,
-      patient: prescription.visit.patient,
-      doctor: prescription.visit.doctor,
-      templates,
-    });
-  } catch (error) {
-    console.error('Edit prescription form error:', error);
-    res.status(500).render('errors/500', {
-      title: 'Server Error',
-      layout: 'layouts/main',
-      error: process.env.NODE_ENV === 'development' ? error : {},
-      NODE_ENV: process.env.NODE_ENV,
-    });
-  }
-});
+  },
+);
 
 /**
  * POST /prescriptions/:id
  * Update prescription
  */
-router.post('/:id', requireAuth, requireClinicAccess, async (req, res) => {
-  try {
-    const clinicId = req.session.user.clinicId;
-    const userRole = req.session.user.role;
-    const userId = req.session.user.id;
-    const {
-      medicines,
-      advice,
-      doctorSignature,
-      doctorName,
-      doctorLicense,
-      templateId,
-    } = req.body;
+router.post(
+  '/:id',
+  requireAuth,
+  requireClinicAccess,
+  requireRole(ROLES.CLINIC_ADMIN, ROLES.DOCTOR, ROLES.STAFF),
+  async (req, res) => {
+    try {
+      const clinicId = req.session.user.clinicId;
+      const userRole = req.session.user.role;
+      const userId = req.session.user.id;
+      const {
+        medicines,
+        advice,
+        doctorSignature,
+        doctorName,
+        doctorLicense,
+        templateId,
+      } = req.body;
 
-    const prescription = await Prescription.findOne({
-      where: { id: req.params.id },
-      include: [
-        {
-          model: Visit,
-          as: 'visit',
-          where: { clinicId },
-        },
-      ],
-    });
-
-    if (!prescription) {
-      return res.status(404).render('errors/404', {
-        title: 'Prescription Not Found',
-        layout: 'layouts/main',
+      const prescription = await Prescription.findOne({
+        where: { id: req.params.id },
+        include: [
+          {
+            model: Visit,
+            as: 'visit',
+            where: { clinicId },
+          },
+        ],
       });
-    }
 
-    // Check access
-    if (
-      (userRole === ROLES.DOCTOR || userRole === ROLES.READ_ONLY) &&
-      prescription.visit.doctorId !== userId
-    ) {
-      return res.status(403).render('errors/403', {
-        title: 'Access Denied',
-        layout: 'layouts/main',
-      });
-    }
-
-    // Parse medicines if it's a string
-    let medicinesArray = [];
-    if (typeof medicines === 'string') {
-      try {
-        medicinesArray = JSON.parse(medicines);
-      } catch (e) {
-        medicinesArray = [];
+      if (!prescription) {
+        return res.status(404).render('errors/404', {
+          title: 'Prescription Not Found',
+          layout: 'layouts/main',
+        });
       }
-    } else if (Array.isArray(medicines)) {
-      medicinesArray = medicines;
+
+      // Check access
+      if (
+        (userRole === ROLES.DOCTOR || userRole === ROLES.READ_ONLY) &&
+        prescription.visit.doctorId !== userId
+      ) {
+        return res.status(403).render('errors/403', {
+          title: 'Access Denied',
+          layout: 'layouts/main',
+        });
+      }
+
+      // Parse medicines if it's a string
+      let medicinesArray = [];
+      if (typeof medicines === 'string') {
+        try {
+          medicinesArray = JSON.parse(medicines);
+        } catch (e) {
+          medicinesArray = [];
+        }
+      } else if (Array.isArray(medicines)) {
+        medicinesArray = medicines;
+      }
+
+      // Update prescription
+      await prescription.update({
+        medicines: medicinesArray,
+        advice: advice || null,
+        doctorSignature: doctorSignature || null,
+        doctorName: doctorName || null,
+        doctorLicense: doctorLicense || null,
+        templateId: templateId || null,
+      });
+
+      res.redirect(`/prescriptions/${prescription.id}`);
+    } catch (error) {
+      console.error('Update prescription error:', error);
+      res.status(500).render('errors/500', {
+        title: 'Server Error',
+        layout: 'layouts/main',
+        error: process.env.NODE_ENV === 'development' ? error : {},
+        NODE_ENV: process.env.NODE_ENV,
+      });
     }
-
-    // Update prescription
-    await prescription.update({
-      medicines: medicinesArray,
-      advice: advice || null,
-      doctorSignature: doctorSignature || null,
-      doctorName: doctorName || null,
-      doctorLicense: doctorLicense || null,
-      templateId: templateId || null,
-    });
-
-    res.redirect(`/prescriptions/${prescription.id}`);
-  } catch (error) {
-    console.error('Update prescription error:', error);
-    res.status(500).render('errors/500', {
-      title: 'Server Error',
-      layout: 'layouts/main',
-      error: process.env.NODE_ENV === 'development' ? error : {},
-      NODE_ENV: process.env.NODE_ENV,
-    });
-  }
-});
+  },
+);
 
 module.exports = router;

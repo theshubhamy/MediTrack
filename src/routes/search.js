@@ -61,7 +61,7 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
         ],
       };
 
-      if (userRole === ROLES.DOCTOR || userRole === ROLES.READ_ONLY) {
+      if (userRole === ROLES.DOCTOR) {
         visitWhere.doctorId = userId;
       }
 
@@ -95,7 +95,7 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
         ],
       };
 
-      if (userRole === ROLES.DOCTOR || userRole === ROLES.READ_ONLY) {
+      if (userRole === ROLES.DOCTOR) {
         appointmentWhere.doctorId = userId;
       }
 

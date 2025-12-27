@@ -73,16 +73,6 @@ async function seed() {
       status: 'ACTIVE',
     });
 
-    const readOnly = await User.create({
-      clinicId: clinic.id,
-      name: 'Read Only User',
-      email: 'readonly@clinic.com',
-      phone: '1234567893',
-      passwordHash,
-      role: 'READ_ONLY',
-      status: 'ACTIVE',
-    });
-
     console.log('✅ Users created with different roles:');
     console.log('');
     console.log('🔐 SUPER ADMIN (System Admin):');
@@ -100,10 +90,6 @@ async function seed() {
     console.log('');
     console.log('👤 STAFF:');
     console.log('   Email: staff@clinic.com');
-    console.log('   Password: admin123');
-    console.log('');
-    console.log('👁️ READ_ONLY:');
-    console.log('   Email: readonly@clinic.com');
     console.log('   Password: admin123');
     console.log('');
     console.log('🎉 Seed completed successfully!');

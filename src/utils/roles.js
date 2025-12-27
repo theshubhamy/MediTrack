@@ -5,8 +5,7 @@
 const ROLES = {
   CLINIC_ADMIN: 'CLINIC_ADMIN',
   DOCTOR: 'DOCTOR',
-  STAFF: 'STAFF',
-  READ_ONLY: 'READ_ONLY'
+  STAFF: 'STAFF'
 };
 
 /**
@@ -17,7 +16,6 @@ const getRoleRedirect = (role) => {
     case ROLES.CLINIC_ADMIN:
     case ROLES.DOCTOR:
     case ROLES.STAFF:
-    case ROLES.READ_ONLY:
       return '/dashboard';
     default:
       return '/dashboard';

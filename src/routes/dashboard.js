@@ -20,8 +20,8 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
     const visitWhere = { clinicId };
     const patientWhere = { clinicId };
 
-    // Doctors and READ_ONLY users see only their own visits
-    if (userRole === ROLES.DOCTOR || userRole === ROLES.READ_ONLY) {
+    // Doctors see only their own visits
+    if (userRole === ROLES.DOCTOR) {
       visitWhere.doctorId = userId;
     }
 
@@ -116,7 +116,7 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
     const appointmentWhere = { clinicId };
 
     // Doctors see only their appointments
-    if (userRole === ROLES.DOCTOR || userRole === ROLES.READ_ONLY) {
+    if (userRole === ROLES.DOCTOR) {
       appointmentWhere.doctorId = userId;
     }
 
