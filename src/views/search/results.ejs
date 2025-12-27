@@ -1,0 +1,127 @@
+<div>
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">Search Results</h1>
+        <p class="text-gray-600 mt-2">Results for "<%= query %>"</p>
+    </div>
+
+    <!-- Search Form -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <form method="GET" action="/search" class="flex gap-4">
+            <input
+                type="text"
+                name="q"
+                placeholder="Search patients, visits, appointments..."
+                value="<%= query %>"
+                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+            <select name="type" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <option value="">All</option>
+                <option value="patients" <%= type === 'patients' ? 'selected' : '' %>>Patients</option>
+                <option value="visits" <%= type === 'visits' ? 'selected' : '' %>>Visits</option>
+                <option value="appointments" <%= type === 'appointments' ? 'selected' : '' %>>Appointments</option>
+            </select>
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                Search
+            </button>
+        </form>
+    </div>
+
+    <!-- Results -->
+    <div class="space-y-6">
+        <!-- Patients Results -->
+        <% if (results.patients && results.patients.length > 0) { %>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Patients (<%= results.patients.length %>)</h2>
+                <div class="space-y-3">
+                    <% results.patients.forEach(patient => { %>
+                        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                            <a href="/patients/<%= patient.id %>" class="text-blue-600 hover:text-blue-700 font-medium text-lg">
+                                <%= patient.name %>
+                            </a>
+                            <div class="mt-2 text-sm text-gray-600">
+                                <% if (patient.phone) { %>
+                                    <span>Phone: <%= patient.phone %></span>
+                                <% } %>
+                                <% if (patient.age) { %>
+                                    <span class="ml-4">Age: <%= patient.age %></span>
+                                <% } %>
+                                <% if (patient.gender) { %>
+                                    <span class="ml-4">Gender: <%= patient.gender %></span>
+                                <% } %>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Visits Results -->
+        <% if (results.visits && results.visits.length > 0) { %>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Visits (<%= results.visits.length %>)</h2>
+                <div class="space-y-3">
+                    <% results.visits.forEach(visit => { %>
+                        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <a href="/visits/<%= visit.id %>" class="text-blue-600 hover:text-blue-700 font-medium">
+                                        Visit on <%= new Date(visit.createdAt).toLocaleString() %>
+                                    </a>
+                                    <div class="mt-2 text-sm text-gray-600">
+                                        <span>Patient: <a href="/patients/<%= visit.patient.id %>" class="text-blue-600"><%= visit.patient.name %></a></span>
+                                        <% if (canViewAll) { %>
+                                            <span class="ml-4">Doctor: <%= visit.doctor.name %></span>
+                                        <% } %>
+                                    </div>
+                                    <% if (visit.diagnosis) { %>
+                                        <p class="mt-2 text-sm text-gray-700"><strong>Diagnosis:</strong> <%= visit.diagnosis %></p>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Appointments Results -->
+        <% if (results.appointments && results.appointments.length > 0) { %>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Appointments (<%= results.appointments.length %>)</h2>
+                <div class="space-y-3">
+                    <% results.appointments.forEach(appointment => { %>
+                        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <a href="/appointments/<%= appointment.id %>" class="text-blue-600 hover:text-blue-700 font-medium">
+                                        <%= new Date(appointment.appointmentDate).toLocaleDateString() %> at <%= appointment.appointmentTime %>
+                                    </a>
+                                    <div class="mt-2 text-sm text-gray-600">
+                                        <span>Patient: <a href="/patients/<%= appointment.patient.id %>" class="text-blue-600"><%= appointment.patient.name %></a></span>
+                                        <% if (canViewAll) { %>
+                                            <span class="ml-4">Doctor: <%= appointment.doctor.name %></span>
+                                        <% } %>
+                                    </div>
+                                    <% if (appointment.reason) { %>
+                                        <p class="mt-2 text-sm text-gray-700"><strong>Reason:</strong> <%= appointment.reason %></p>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- No Results -->
+        <% if ((!results.patients || results.patients.length === 0) &&
+              (!results.visits || results.visits.length === 0) &&
+              (!results.appointments || results.appointments.length === 0)) { %>
+            <div class="bg-white rounded-lg shadow-md p-12 text-center">
+                <p class="text-gray-500 text-lg">No results found for "<%= query %>"</p>
+                <p class="text-gray-400 mt-2">Try a different search term</p>
+            </div>
+        <% } %>
+    </div>
+</div>
+

@@ -99,6 +99,8 @@ const adminRoutes = require('./routes/admin');
 const appointmentRoutes = require('./routes/appointments');
 const availabilityRoutes = require('./routes/availability');
 const prescriptionRoutes = require('./routes/prescriptions');
+const searchRoutes = require('./routes/search');
+const medicineRoutes = require('./routes/medicines');
 
 app.use('/', authRoutes);
 app.use('/dashboard', dashboardRoutes);
@@ -110,6 +112,8 @@ app.use('/admin', adminRoutes);
 app.use('/appointments', appointmentRoutes);
 app.use('/availability', availabilityRoutes);
 app.use('/prescriptions', prescriptionRoutes);
+app.use('/search', searchRoutes);
+app.use('/medicines', medicineRoutes);
 
 // 404 handler
 app.use((req, res) => {

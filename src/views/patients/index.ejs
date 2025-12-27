@@ -6,18 +6,86 @@
         <% } %>
     </div>
 
-    <div class="card mb-6">
-        <form method="GET" action="/patients" class="flex gap-4">
-            <input
-                type="text"
-                name="search"
-                placeholder="Search by name or phone..."
-                value="<%= search %>"
-                class="form-input flex-1"
-            >
-            <button type="submit" class="btn btn-secondary">Search</button>
+    <!-- Advanced Search & Filters -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <form method="GET" action="/patients" id="searchForm" class="space-y-4">
+            <!-- Search Bar -->
+            <div class="flex gap-4">
+                <input
+                    type="text"
+                    name="search"
+                    placeholder="Search by name or phone..."
+                    value="<%= filters.search || '' %>"
+                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Search
+                </button>
+                <button type="button" id="toggleFilters" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                    Filters
+                </button>
+                <a href="/patients?export=csv<%= filters.search ? '&search=' + encodeURIComponent(filters.search) : '' %><%= filters.ageMin ? '&ageMin=' + filters.ageMin : '' %><%= filters.ageMax ? '&ageMax=' + filters.ageMax : '' %><%= filters.gender ? '&gender=' + filters.gender : '' %>"
+                   class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    Export CSV
+                </a>
+            </div>
+
+            <!-- Advanced Filters (Collapsible) -->
+            <div id="filtersPanel" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Age Range</label>
+                    <div class="flex gap-2">
+                        <input
+                            type="number"
+                            name="ageMin"
+                            placeholder="Min"
+                            value="<%= filters.ageMin || '' %>"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                        <input
+                            type="number"
+                            name="ageMax"
+                            placeholder="Max"
+                            value="<%= filters.ageMax || '' %>"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+                    <select name="gender" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">All</option>
+                        <option value="MALE" <%= filters.gender === 'MALE' ? 'selected' : '' %>>Male</option>
+                        <option value="FEMALE" <%= filters.gender === 'FEMALE' ? 'selected' : '' %>>Female</option>
+                        <option value="OTHER" <%= filters.gender === 'OTHER' ? 'selected' : '' %>>Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+                    <select name="sortBy" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="created_at" <%= filters.sortBy === 'created_at' ? 'selected' : '' %>>Date</option>
+                        <option value="name" <%= filters.sortBy === 'name' ? 'selected' : '' %>>Name</option>
+                        <option value="age" <%= filters.sortBy === 'age' ? 'selected' : '' %>>Age</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Order</label>
+                    <select name="sortOrder" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="desc" <%= filters.sortOrder === 'desc' ? 'selected' : '' %>>Descending</option>
+                        <option value="asc" <%= filters.sortOrder === 'asc' ? 'selected' : '' %>>Ascending</option>
+                    </select>
+                </div>
+            </div>
         </form>
     </div>
+
+    <script>
+        document.getElementById('toggleFilters')?.addEventListener('click', function() {
+            const panel = document.getElementById('filtersPanel');
+            panel.classList.toggle('hidden');
+            this.textContent = panel.classList.contains('hidden') ? 'Filters' : 'Hide Filters';
+        });
+    </script>
 
     <% if (patients.length === 0) { %>
     <div class="empty-state">

@@ -12,17 +12,18 @@ const { Op } = require('sequelize');
 
 /**
  * GET /patients
- * List all patients
+ * List all patients with advanced search and filters
  */
 router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
   try {
     const clinicId = req.session.user.clinicId;
-    const search = req.query.search || '';
+    const { search, ageMin, ageMax, gender, sortBy, sortOrder, export: exportData } = req.query;
 
     const where = {
       clinicId,
     };
 
+    // Advanced search
     if (search) {
       where[Op.or] = [
         { name: { [Op.iLike]: `%${search}%` } },
@@ -30,16 +31,54 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
       ];
     }
 
+    // Age filter
+    if (ageMin || ageMax) {
+      where.age = {};
+      if (ageMin) where.age[Op.gte] = parseInt(ageMin);
+      if (ageMax) where.age[Op.lte] = parseInt(ageMax);
+    }
+
+    // Gender filter
+    if (gender) {
+      where.gender = gender;
+    }
+
+    // Sort options
+    const order = [];
+    if (sortBy) {
+      order.push([sortBy, sortOrder === 'desc' ? 'DESC' : 'ASC']);
+    } else {
+      order.push([['created_at', 'DESC']]);
+    }
+
     const patients = await Patient.findAll({
       where,
-      order: [['created_at', 'DESC']],
-      limit: 50,
+      order,
+      limit: exportData ? null : 100,
     });
+
+    // Export functionality
+    if (exportData === 'csv') {
+      const csv = [
+        ['Name', 'Phone', 'Age', 'Gender', 'Created Date'].join(','),
+        ...patients.map(p => [
+          `"${p.name}"`,
+          p.phone || '',
+          p.age || '',
+          p.gender || '',
+          new Date(p.createdAt).toLocaleDateString(),
+        ].join(',')),
+      ].join('\n');
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=patients.csv');
+      return res.send(csv);
+    }
 
     res.render('patients/index', {
       title: 'Patients',
       patients,
-      search,
+      filters: { search, ageMin, ageMax, gender, sortBy, sortOrder },
     });
   } catch (error) {
     console.error('Patients list error:', error);
@@ -47,6 +86,7 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
       title: 'Server Error',
       layout: 'layouts/main',
       error: process.env.NODE_ENV === 'development' ? error : {},
+      NODE_ENV: process.env.NODE_ENV,
     });
   }
 });

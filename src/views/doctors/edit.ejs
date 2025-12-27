@@ -1,0 +1,135 @@
+<div>
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">
+                    <%= isOwnProfile ? 'Edit My Profile' : `Edit Doctor: ${doctor.name}` %>
+                </h1>
+                <p class="text-gray-600 mt-2">Update doctor profile information</p>
+            </div>
+            <a href="/doctors" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                Back to Doctors
+            </a>
+        </div>
+    </div>
+
+    <% if (typeof success !== 'undefined' && success) { %>
+        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
+            <%= success %>
+        </div>
+    <% } %>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <form method="POST" action="/doctors/<%= doctor.id %>">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Name -->
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                        Name <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="name" name="name" value="<%= doctor.name %>" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+
+                <!-- Email (Read-only) -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" id="email" value="<%= doctor.email %>" disabled
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500">
+                    <p class="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                </div>
+
+                <!-- Phone -->
+                <div>
+                    <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <input type="tel" id="phone" name="phone" value="<%= doctor.phone || '' %>"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+
+                <!-- Role (Read-only) -->
+                <div>
+                    <label for="role" class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                    <input type="text" value="<%= doctor.role.replace('_', ' ') %>" disabled
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500">
+                </div>
+
+                <!-- Preferred Language -->
+                <div>
+                    <label for="preferredLanguage" class="block text-sm font-medium text-gray-700 mb-2">Preferred Language</label>
+                    <select id="preferredLanguage" name="preferredLanguage"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="en" <%= doctor.preferredLanguage === 'en' ? 'selected' : '' %>>English</option>
+                        <option value="es" <%= doctor.preferredLanguage === 'es' ? 'selected' : '' %>>Spanish</option>
+                        <option value="fr" <%= doctor.preferredLanguage === 'fr' ? 'selected' : '' %>>French</option>
+                        <option value="de" <%= doctor.preferredLanguage === 'de' ? 'selected' : '' %>>German</option>
+                        <option value="hi" <%= doctor.preferredLanguage === 'hi' ? 'selected' : '' %>>Hindi</option>
+                    </select>
+                </div>
+
+                <!-- Timezone -->
+                <div>
+                    <label for="timezone" class="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+                    <select id="timezone" name="timezone"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="UTC" <%= doctor.timezone === 'UTC' ? 'selected' : '' %>>UTC</option>
+                        <option value="America/New_York" <%= doctor.timezone === 'America/New_York' ? 'selected' : '' %>>Eastern Time (ET)</option>
+                        <option value="America/Chicago" <%= doctor.timezone === 'America/Chicago' ? 'selected' : '' %>>Central Time (CT)</option>
+                        <option value="America/Denver" <%= doctor.timezone === 'America/Denver' ? 'selected' : '' %>>Mountain Time (MT)</option>
+                        <option value="America/Los_Angeles" <%= doctor.timezone === 'America/Los_Angeles' ? 'selected' : '' %>>Pacific Time (PT)</option>
+                        <option value="Asia/Kolkata" <%= doctor.timezone === 'Asia/Kolkata' ? 'selected' : '' %>>India Standard Time (IST)</option>
+                        <option value="Europe/London" <%= doctor.timezone === 'Europe/London' ? 'selected' : '' %>>Greenwich Mean Time (GMT)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Notification Settings -->
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Notification Settings</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="emailNotificationsEnabled" name="emailNotificationsEnabled"
+                            <%= doctor.emailNotificationsEnabled ? 'checked' : '' %>
+                            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <label for="emailNotificationsEnabled" class="ml-2 text-sm font-medium text-gray-700">
+                            Email Notifications
+                        </label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="smsNotificationsEnabled" name="smsNotificationsEnabled"
+                            <%= doctor.smsNotificationsEnabled ? 'checked' : '' %>
+                            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <label for="smsNotificationsEnabled" class="ml-2 text-sm font-medium text-gray-700">
+                            SMS Notifications
+                        </label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="appointmentReminders" name="appointmentReminders"
+                            <%= doctor.appointmentReminders ? 'checked' : '' %>
+                            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <label for="appointmentReminders" class="ml-2 text-sm font-medium text-gray-700">
+                            Appointment Reminders
+                        </label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="visitReminders" name="visitReminders"
+                            <%= doctor.visitReminders ? 'checked' : '' %>
+                            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <label for="visitReminders" class="ml-2 text-sm font-medium text-gray-700">
+                            Visit Reminders
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex gap-4">
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Save Changes
+                </button>
+                <a href="/doctors" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+

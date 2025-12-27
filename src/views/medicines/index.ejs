@@ -1,0 +1,109 @@
+<div>
+    <div class="mb-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Medicine Database</h1>
+            <p class="text-gray-600 mt-2">Manage medicine database</p>
+        </div>
+        <% if (canManage) { %>
+            <a href="/medicines/new" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                + Add Medicine
+            </a>
+        <% } %>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <form method="GET" action="/medicines" class="space-y-4">
+            <div class="flex gap-4">
+                <input
+                    type="text"
+                    name="search"
+                    placeholder="Search by name, generic name, or brand..."
+                    value="<%= filters.search || '' %>"
+                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                <select name="type" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Types</option>
+                    <option value="TABLET" <%= filters.type === 'TABLET' ? 'selected' : '' %>>Tablet</option>
+                    <option value="CAPSULE" <%= filters.type === 'CAPSULE' ? 'selected' : '' %>>Capsule</option>
+                    <option value="SYRUP" <%= filters.type === 'SYRUP' ? 'selected' : '' %>>Syrup</option>
+                    <option value="INJECTION" <%= filters.type === 'INJECTION' ? 'selected' : '' %>>Injection</option>
+                    <option value="DROPS" <%= filters.type === 'DROPS' ? 'selected' : '' %>>Drops</option>
+                    <option value="OINTMENT" <%= filters.type === 'OINTMENT' ? 'selected' : '' %>>Ointment</option>
+                    <option value="OTHER" <%= filters.type === 'OTHER' ? 'selected' : '' %>>Other</option>
+                </select>
+                <select name="isActive" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="">All</option>
+                    <option value="true" <%= filters.isActive === 'true' ? 'selected' : '' %>>Active</option>
+                    <option value="false" <%= filters.isActive === 'false' ? 'selected' : '' %>>Inactive</option>
+                </select>
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Search
+                </button>
+                <a href="/medicines?export=csv<%= filters.search ? '&search=' + encodeURIComponent(filters.search) : '' %><%= filters.type ? '&type=' + filters.type : '' %><%= filters.isActive ? '&isActive=' + filters.isActive : '' %>"
+                   class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    Export CSV
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Medicines List -->
+    <% if (medicines.length === 0) { %>
+        <div class="bg-white rounded-lg shadow-md p-12 text-center">
+            <p class="text-gray-500">No medicines found.</p>
+            <% if (canManage) { %>
+                <a href="/medicines/new" class="text-blue-600 hover:text-blue-700 mt-4 inline-block">Add your first medicine</a>
+            <% } %>
+        </div>
+    <% } else { %>
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Generic Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Strength</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <% medicines.forEach(medicine => { %>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    <%= medicine.name %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    <%= medicine.genericName || '-' %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <%= medicine.type %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <%= medicine.strength || '-' %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <% if (medicine.isActive) { %>
+                                        <span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">Active</span>
+                                    <% } else { %>
+                                        <span class="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">Inactive</span>
+                                    <% } %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                                    <% if (canManage) { %>
+                                        <a href="/medicines/<%= medicine.id %>/edit" class="text-blue-600 hover:text-blue-700">Edit</a>
+                                    <% } %>
+                                    <a href="/medicines/<%= medicine.id %>" class="text-gray-600 hover:text-gray-700">View</a>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <% } %>
+</div>
+

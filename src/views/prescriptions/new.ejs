@@ -1,0 +1,216 @@
+<div>
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">New Prescription</h1>
+        <p class="text-gray-600 mt-2">Create prescription for <%= patient.name %></p>
+    </div>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <%= error %>
+        </div>
+    <% } %>
+
+    <form method="POST" action="/prescriptions" id="prescription-form" class="space-y-6">
+        <input type="hidden" name="visitId" value="<%= visit.id %>">
+
+        <!-- Template Selection -->
+        <% if (templates && templates.length > 0) { %>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <label for="templateSelect" class="block text-sm font-medium text-gray-700 mb-2">
+                    Use Template (Optional)
+                </label>
+                <select id="templateSelect" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">Select a template...</option>
+                    <% templates.forEach(template => { %>
+                        <option value="<%= template.id %>" <%= selectedTemplate && selectedTemplate.id === template.id ? 'selected' : '' %>>
+                            <%= template.name %>
+                        </option>
+                    <% }); %>
+                </select>
+                <button type="button" id="loadTemplateBtn" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                    Load Template
+                </button>
+            </div>
+        <% } %>
+
+        <!-- Medicines Section -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-900">Medicines</h2>
+                <button type="button" id="addMedicineBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    + Add Medicine
+                </button>
+            </div>
+
+            <div id="medicinesList" class="space-y-4">
+                <!-- Medicines will be added here dynamically -->
+            </div>
+
+            <input type="hidden" name="medicines" id="medicinesInput" value="[]">
+        </div>
+
+        <!-- Advice Section -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <label for="advice" class="block text-sm font-medium text-gray-700 mb-2">
+                Advice / Instructions
+            </label>
+            <textarea name="advice" id="advice" rows="4"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter general advice or instructions for the patient..."></textarea>
+        </div>
+
+        <!-- Digital Signature Section -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Doctor Signature</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="doctorName" class="block text-sm font-medium text-gray-700 mb-2">
+                        Doctor Name
+                    </label>
+                    <input type="text" name="doctorName" id="doctorName" value="<%= doctor.name %>"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label for="doctorLicense" class="block text-sm font-medium text-gray-700 mb-2">
+                        License Number
+                    </label>
+                    <input type="text" name="doctorLicense" id="doctorLicense"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Signature
+                </label>
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                    <canvas id="signatureCanvas" width="600" height="200" class="border border-gray-200 rounded bg-white cursor-crosshair"></canvas>
+                    <div class="mt-2 flex gap-2">
+                        <button type="button" id="clearSignatureBtn" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm">
+                            Clear
+                        </button>
+                        <span class="text-xs text-gray-500 self-center">Draw your signature above</span>
+                    </div>
+                </div>
+                <input type="hidden" name="doctorSignature" id="doctorSignatureInput">
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-4">
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                Save Prescription
+            </button>
+            <a href="/visits/<%= visit.id %>" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Medicine Item Template (hidden) -->
+<template id="medicineTemplate">
+    <div class="medicine-item border border-gray-200 rounded-lg p-4 bg-gray-50">
+        <div class="flex justify-between items-start mb-3">
+            <h3 class="text-lg font-semibold text-gray-900">Medicine <span class="medicine-index"></span></h3>
+            <button type="button" class="remove-medicine-btn text-red-600 hover:text-red-700 font-medium">Remove</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Medicine Search -->
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Search Medicine</label>
+                <input type="text" class="medicine-search w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Type to search medicines...">
+                <div class="medicine-results hidden mt-2 border border-gray-200 rounded-lg bg-white max-h-48 overflow-y-auto"></div>
+            </div>
+
+            <!-- Medicine Details (hidden until medicine selected) -->
+            <div class="medicine-details hidden md:col-span-2 space-y-4">
+                <input type="hidden" class="medicine-id">
+                <input type="hidden" class="medicine-strength">
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Medicine Name</label>
+                    <input type="text" class="medicine-name w-full px-4 py-2 border border-gray-300 rounded-lg" readonly>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Dosage</label>
+                        <input type="text" class="medicine-dosage w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g., 500mg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Frequency</label>
+                        <select class="medicine-frequency w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select...</option>
+                            <option value="Once daily">Once daily</option>
+                            <option value="Twice daily">Twice daily</option>
+                            <option value="Thrice daily">Thrice daily</option>
+                            <option value="Four times daily">Four times daily</option>
+                            <option value="Every 6 hours">Every 6 hours</option>
+                            <option value="Every 8 hours">Every 8 hours</option>
+                            <option value="Every 12 hours">Every 12 hours</option>
+                            <option value="As needed">As needed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Duration</label>
+                        <input type="text" class="medicine-duration w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g., 7 days">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                        <input type="text" class="medicine-quantity w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g., 30 tablets">
+                    </div>
+                </div>
+
+                <!-- Dosage Calculator -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-sm font-medium text-gray-700">Dosage Calculator</label>
+                        <button type="button" class="toggle-calculator text-xs text-blue-600 hover:text-blue-700">Show Calculator</button>
+                    </div>
+                    <div class="calculator-panel hidden space-y-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Patient Weight (kg)</label>
+                                <input type="number" class="patient-weight w-full px-3 py-1 text-sm border border-gray-300 rounded"
+                                    value="<%= patient.age ? '' : '' %>" placeholder="Weight">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Patient Age (years)</label>
+                                <input type="number" class="patient-age w-full px-3 py-1 text-sm border border-gray-300 rounded"
+                                    value="<%= patient.age || '' %>" placeholder="Age">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">Dosage per kg (mg/kg)</label>
+                            <input type="number" class="dosage-per-kg w-full px-3 py-1 text-sm border border-gray-300 rounded"
+                                placeholder="e.g., 10">
+                        </div>
+                        <button type="button" class="calculate-dosage-btn w-full px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
+                            Calculate Dosage
+                        </button>
+                        <div class="calculated-dosage text-sm text-gray-700 hidden"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Instructions</label>
+                    <textarea class="medicine-instructions w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="2"
+                        placeholder="Special instructions for this medicine..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script src="/js/prescription-form.js"></script>
+

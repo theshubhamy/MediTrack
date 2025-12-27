@@ -202,5 +202,21 @@ document.addEventListener('DOMContentLoaded', function() {
             sidebar.style.transition = 'width 0.3s ease-in-out';
         }
     }
+
+    // Set bar chart heights from data attributes
+    const barChartItems = document.querySelectorAll('.bar-chart-item');
+    barChartItems.forEach(item => {
+        const height = item.getAttribute('data-height');
+        if (height) {
+            item.style.height = height;
+            // Ensure minimum visibility for very small values
+            if (height.includes('%')) {
+                const percentValue = parseFloat(height);
+                if (percentValue > 0 && percentValue < 1) {
+                    item.style.minHeight = '4px';
+                }
+            }
+        }
+    });
 });
 
