@@ -235,7 +235,7 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
     if (sortBy) {
       order.push([sortBy, sortOrder === 'desc' ? 'DESC' : 'ASC']);
     } else {
-      order.push([['created_at', 'DESC']]);
+      order.push(['created_at', 'DESC']);
     }
 
     const visits = await Visit.findAll({

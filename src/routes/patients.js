@@ -17,7 +17,15 @@ const { Op } = require('sequelize');
 router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
   try {
     const clinicId = req.session.user.clinicId;
-    const { search, ageMin, ageMax, gender, sortBy, sortOrder, export: exportData } = req.query;
+    const {
+      search,
+      ageMin,
+      ageMax,
+      gender,
+      sortBy,
+      sortOrder,
+      export: exportData,
+    } = req.query;
 
     const where = {
       clinicId,
@@ -61,13 +69,15 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
     if (exportData === 'csv') {
       const csv = [
         ['Name', 'Phone', 'Age', 'Gender', 'Created Date'].join(','),
-        ...patients.map(p => [
-          `"${p.name}"`,
-          p.phone || '',
-          p.age || '',
-          p.gender || '',
-          new Date(p.createdAt).toLocaleDateString(),
-        ].join(',')),
+        ...patients.map(p =>
+          [
+            `"${p.name}"`,
+            p.phone || '',
+            p.age || '',
+            p.gender || '',
+            new Date(p.createdAt).toLocaleDateString(),
+          ].join(','),
+        ),
       ].join('\n');
 
       res.setHeader('Content-Type', 'text/csv');
