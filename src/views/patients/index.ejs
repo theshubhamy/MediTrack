@@ -1,7 +1,7 @@
 <div>
     <div class="page-header">
         <h1 class="text-3xl font-bold text-gray-900">Patients</h1>
-        <% if (typeof canCreateVisits !== 'undefined' && canCreateVisits()) { %>
+        <% if (typeof canCreatePatients !== 'undefined' && canCreatePatients()) { %>
         <a href="/patients/new" class="btn btn-primary">Add New Patient</a>
         <% } %>
     </div>

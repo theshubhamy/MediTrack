@@ -69,6 +69,14 @@ const canCreateVisits = (user) => {
 };
 
 /**
+ * Check if user can create patients
+ */
+const canCreatePatients = (user) => {
+  if (!user) return false;
+  return [ROLES.CLINIC_ADMIN, ROLES.DOCTOR, ROLES.STAFF].includes(user.role);
+};
+
+/**
  * Check if user can view all data (not just their own)
  */
 const canViewAllData = (user) => {
@@ -85,6 +93,7 @@ module.exports = {
   canManageClinic,
   canManageDoctors,
   canCreateVisits,
+  canCreatePatients,
   canViewAllData
 };
 

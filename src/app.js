@@ -71,6 +71,7 @@ app.use((req, res, next) => {
       canManageClinic,
       canManageDoctors,
       canCreateVisits,
+      canCreatePatients,
       canViewAllData,
       hasRole,
       hasAnyRole,
@@ -79,6 +80,7 @@ app.use((req, res, next) => {
     res.locals.canManageClinic = () => canManageClinic(req.session.user);
     res.locals.canManageDoctors = () => canManageDoctors(req.session.user);
     res.locals.canCreateVisits = () => canCreateVisits(req.session.user);
+    res.locals.canCreatePatients = () => canCreatePatients(req.session.user);
     res.locals.canViewAllData = () => canViewAllData(req.session.user);
     res.locals.hasRole = role => hasRole(req.session.user, role);
     res.locals.hasAnyRole = (...roles) =>
