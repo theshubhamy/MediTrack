@@ -1,0 +1,163 @@
+<div>
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Activity Logs</h1>
+            <p class="text-gray-600 mt-2">Comprehensive audit trail of all system activities</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="/admin/export/activity-logs" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                📥 Export CSV
+            </a>
+            <a href="/admin" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-6">
+        <form method="GET" action="/admin/activity-logs" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                <input type="text" name="search" value="<%= typeof filters !== 'undefined' && filters.search ? filters.search : '' %>"
+                       placeholder="Action or description..."
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Action</label>
+                <select name="action" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    <option value="">All Actions</option>
+                    <% if (typeof actions !== 'undefined' && actions.length > 0) { %>
+                        <% actions.forEach(action => { %>
+                            <option value="<%= action %>" <%= typeof filters !== 'undefined' && filters.action === action ? 'selected' : '' %>>
+                                <%= action %>
+                            </option>
+                        <% }); %>
+                    <% } %>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Entity Type</label>
+                <select name="entityType" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    <option value="">All Types</option>
+                    <% if (typeof entityTypes !== 'undefined' && entityTypes.length > 0) { %>
+                        <% entityTypes.forEach(type => { %>
+                            <option value="<%= type %>" <%= typeof filters !== 'undefined' && filters.entityType === type ? 'selected' : '' %>>
+                                <%= type %>
+                            </option>
+                        <% }); %>
+                    <% } %>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                <input type="date" name="startDate" value="<%= typeof filters !== 'undefined' && filters.startDate ? filters.startDate : '' %>"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                <input type="date" name="endDate" value="<%= typeof filters !== 'undefined' && filters.endDate ? filters.endDate : '' %>"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div class="md:col-span-5 flex gap-2">
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Filter
+                </button>
+                <a href="/admin/activity-logs" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Activity Logs Table -->
+    <div class="card">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">
+                Logs (<%= typeof pagination !== 'undefined' ? pagination.total : logs.length %>)
+            </h2>
+        </div>
+        <% if (logs.length === 0) { %>
+            <div class="empty-state">
+                <p>No activity logs found.</p>
+            </div>
+        <% } else { %>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User/Admin</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clinic</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entity</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <% logs.forEach(log => { %>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <%= new Date(log.created_at).toLocaleString() %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                                        <%= log.action %>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <% if (log.user) { %>
+                                        <%= log.user.name %> (<%= log.user.email %>)
+                                    <% } else if (log.admin) { %>
+                                        Admin: <%= log.admin.name || log.admin.email %>
+                                    <% } else { %>
+                                        System
+                                    <% } %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <%= log.clinic ? log.clinic.name : '-' %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <% if (log.entityType && log.entityId) { %>
+                                        <%= log.entityType %> (<%= log.entityId.substring(0, 8) %>...)
+                                    <% } else { %>
+                                        -
+                                    <% } %>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-700">
+                                    <%= log.description || '-' %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <%= log.ipAddress || '-' %>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <% if (typeof pagination !== 'undefined' && pagination.pages > 1) { %>
+                <div class="mt-6 flex items-center justify-between">
+                    <div class="text-sm text-gray-700">
+                        Showing <%= (pagination.page - 1) * pagination.limit + 1 %> to <%= Math.min(pagination.page * pagination.limit, pagination.total) %> of <%= pagination.total %> logs
+                    </div>
+                    <div class="flex gap-2">
+                        <% if (pagination.page > 1) { %>
+                            <a href="?page=<%= pagination.page - 1 %><%= typeof filters !== 'undefined' && filters.search ? '&search=' + filters.search : '' %><%= typeof filters !== 'undefined' && filters.action ? '&action=' + filters.action : '' %><%= typeof filters !== 'undefined' && filters.entityType ? '&entityType=' + filters.entityType : '' %>"
+                               class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                                Previous
+                            </a>
+                        <% } %>
+                        <% if (pagination.page < pagination.pages) { %>
+                            <a href="?page=<%= pagination.page + 1 %><%= typeof filters !== 'undefined' && filters.search ? '&search=' + filters.search : '' %><%= typeof filters !== 'undefined' && filters.action ? '&action=' + filters.action : '' %><%= typeof filters !== 'undefined' && filters.entityType ? '&entityType=' + filters.entityType : '' %>"
+                               class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                                Next
+                            </a>
+                        <% } %>
+                    </div>
+                </div>
+            <% } %>
+        <% } %>
+    </div>
+</div>
+

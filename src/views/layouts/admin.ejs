@@ -1,151 +1,445 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      <%= typeof title !=='undefined' ? title + ' - MediTrack Admin' :
+      'MediTrack Admin' %>
+    </title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/admin.css" />
+  </head>
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>
-            <%= typeof title !=='undefined' ? title + ' - MediTrack Admin' : 'MediTrack Admin' %>
-        </title>
-        <link rel="stylesheet" href="/css/style.css">
-    </head>
+  <body class="bg-gray-50 min-h-screen flex" data-theme="light">
+    <% if (typeof admin !=='undefined' && admin) { %>
+    <!-- Sidebar -->
+    <aside
+      id="sidebar"
+      class="w-64 bg-white border-r border-gray-200 fixed h-full z-40 transition-all duration-300 ease-in-out"
+    >
+      <div class="flex flex-col h-full">
+        <!-- Logo -->
+        <div
+          class="p-6 border-b border-gray-200 flex items-center justify-between sidebar-header"
+        >
+          <a
+            href="/admin"
+            class="text-2xl font-bold text-blue-600 hover:text-blue-700 sidebar-logo-full whitespace-nowrap"
+            >🏥 MediTrack</a
+          >
+          <span
+            class="text-2xl font-bold text-blue-600 sidebar-logo-collapsed hidden"
+            >🏥</span
+          >
+          <button
+            id="sidebar-toggle"
+            class="p-2 rounded-lg hover:bg-gray-100 transition-colors lg:hidden"
+          >
+            <svg
+              class="w-6 h-6 text-gray-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
+        </div>
 
-    <body class="bg-gray-50 min-h-screen flex">
-        <% if (typeof admin !=='undefined' && admin) { %>
-            <!-- Sidebar -->
-            <aside id="sidebar"
-                class="w-64 bg-white border-r border-gray-200 fixed h-full z-40 transition-all duration-300 ease-in-out">
-                <div class="flex flex-col h-full">
-                    <!-- Logo -->
-                    <div class="p-6 border-b border-gray-200 flex items-center justify-between">
-                        <a href="/admin"
-                            class="text-2xl font-bold text-blue-600 hover:text-blue-700 sidebar-logo-full">🏥
-                            MediTrack</a>
-                        <span class="text-2xl font-bold text-blue-600 sidebar-logo-collapsed hidden">🏥</span>
-                        <button id="sidebar-toggle"
-                            class="p-2 rounded-lg hover:bg-gray-100 transition-colors lg:hidden">
-                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
+        <!-- Navigation -->
+        <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+          <a
+            href="/admin"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title === 'Dashboard' ? 'bg-blue-50 text-blue-600' : '' %>"
+            title="Dashboard"
+          >
+            <span class="mr-3 text-xl">📊</span>
+            <span class="sidebar-text">Dashboard</span>
+          </a>
+          <a
+            href="/admin/users"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title.includes('User') ? 'bg-blue-50 text-blue-600' : '' %>"
+            title="Users"
+          >
+            <span class="mr-3 text-xl">👥</span>
+            <span class="sidebar-text">Users</span>
+          </a>
+          <a
+            href="/admin/clinics"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title.includes('Clinic') ? 'bg-blue-50 text-blue-600' : '' %>"
+            title="Clinics"
+          >
+            <span class="mr-3 text-xl">🏥</span>
+            <span class="sidebar-text">Clinics</span>
+          </a>
+          <a
+            href="/admin/analytics"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title === 'Analytics' ? 'bg-blue-50 text-blue-600' : '' %>"
+            title="Analytics"
+          >
+            <span class="mr-3 text-xl">📈</span>
+            <span class="sidebar-text">Analytics</span>
+          </a>
+          <a
+            href="/admin/activity-logs"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title === 'Activity Logs' ? 'bg-blue-50 text-blue-600' : '' %>"
+            title="Activity Logs"
+          >
+            <span class="mr-3 text-xl">📝</span>
+            <span class="sidebar-text">Activity Logs</span>
+          </a>
+          <a
+            href="/admin/system-health"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title === 'System Health' ? 'bg-blue-50 text-blue-600' : '' %>"
+            title="System Health"
+          >
+            <span class="mr-3 text-xl">💚</span>
+            <span class="sidebar-text">System Health</span>
+          </a>
+          <a
+            href="/admin/security"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title === 'Security Dashboard' ? 'bg-blue-50 text-blue-600' : '' %>"
+            title="Security Dashboard"
+          >
+            <span class="mr-3 text-xl">🔐</span>
+            <span class="sidebar-text">Security</span>
+          </a>
+        </nav>
 
-                    <!-- Navigation -->
-                    <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-                        <a href="/admin"
-                            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title === 'Admin Dashboard' ? 'bg-blue-50 text-blue-600' : '' %>"
-                            title="Dashboard">
-                            <span class="mr-3 text-xl">📊</span>
-                            <span class="sidebar-text">Dashboard</span>
-                        </a>
-                        <a href="/admin/clinics"
-                            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title.includes('Clinic') ? 'bg-blue-50 text-blue-600' : '' %>"
-                            title="Clinics">
-                            <span class="mr-3 text-xl">🏥</span>
-                            <span class="sidebar-text">Clinics</span>
-                        </a>
-                    </nav>
-
-                    <!-- User Info -->
-                    <div class="p-4 border-t border-gray-100">
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="flex items-center">
-                                <div
-                                    class="w-10 h-10 bg-blue-700 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <span class="text-white font-semibold">
-                                        <%= admin.name.charAt(0).toUpperCase() %>
-                                    </span>
-                                </div>
-                                <div class="ml-3 sidebar-text">
-                                    <p class="text-sm font-medium text-blue-700">
-                                        <%= admin.name %>
-                                    </p>
-                                    <p class="text-xs text-blue-700">Super Admin</p>
-                                </div>
-                            </div>
-                        </div>
-                        <a href="/admin/logout"
-                            class="block w-full text-center px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors sidebar-text">
-                            Logout
-                        </a>
-                    </div>
-                </div>
-            </aside>
-
-            <!-- Main Content -->
-            <div id="main-content" class="flex-1 ml-64 transition-all duration-300 ease-in-out">
-                <!-- Top Navbar -->
-                <nav class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
-                    <div class="px-6 py-4 flex items-center">
-                        <button id="sidebar-toggle-mobile"
-                            class="mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors lg:hidden">
-                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 6h16M4 12h16M4 18h16"></path>
-                            </svg>
-                        </button>
-                        <button id="sidebar-toggle-desktop"
-                            class="mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors hidden lg:block">
-                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 6h16M4 12h16M4 18h16"></path>
-                            </svg>
-                        </button>
-                        <div>
-                            <h1 class="text-2xl font-bold text-gray-900">
-                                <%= typeof title !=='undefined' ? title : 'Admin Dashboard' %>
-                            </h1>
-                        </div>
-                    </div>
-                </nav>
-
-                <!-- Page Content -->
-                <main class="p-6 min-h-screen">
-                    <%- body %>
-                </main>
-
-                <!-- Footer -->
-                <footer class="bg-white border-t border-gray-200 mt-auto">
-                    <div class="px-6 py-4">
-                        <p class="text-center text-gray-500 text-sm">&copy; <%= new Date().getFullYear() %> MediTrack
-                                Admin. All rights reserved.</p>
-                    </div>
-                </footer>
+        <!-- User Info -->
+        <div class="p-4 border-t border-gray-100">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center">
+              <div
+                class="w-10 h-10 bg-blue-700 rounded-full flex items-center justify-center flex-shrink-0"
+              >
+                <span class="text-white font-semibold">
+                  <%= admin.name.charAt(0).toUpperCase() %>
+                </span>
+              </div>
+              <div class="ml-3 sidebar-text">
+                <p class="text-sm font-medium text-blue-700">
+                  <%= admin.name %>
+                </p>
+                <p class="text-xs text-blue-700">Super Admin</p>
+              </div>
             </div>
-            <% } else { %>
-                <!-- No sidebar for non-authenticated users -->
-                <div class="flex-1">
-                    <nav class="bg-blue-600 border-b border-blue-700 sticky top-0 z-50 shadow-sm">
-                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                            <div class="flex justify-between items-center h-16">
-                                <div class="flex-shrink-0">
-                                    <a href="/admin" class="text-2xl font-bold text-white hover:text-blue-100">🏥
-                                        MediTrack Admin</a>
-                                </div>
-                            </div>
-                        </div>
-                    </nav>
+          </div>
+          <a
+            href="/admin/logout"
+            class="block w-full text-center px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors sidebar-text"
+          >
+            Logout
+          </a>
+        </div>
+      </div>
+    </aside>
 
-                    <main class="flex-1 py-8 min-h-screen">
-                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                            <%- body %>
-                        </div>
-                    </main>
+    <!-- Main Content -->
+    <div
+      id="main-content"
+      class="flex-1 ml-64 transition-all duration-300 ease-in-out"
+    >
+      <!-- Top Navbar -->
+      <nav
+        class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm"
+      >
+        <div class="px-6 py-4 flex items-center justify-between">
+          <div class="flex items-center">
+            <button
+              id="sidebar-toggle-mobile"
+              class="mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors lg:hidden"
+            >
+              <svg
+                class="w-6 h-6 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                ></path>
+              </svg>
+            </button>
+            <button
+              id="sidebar-toggle-desktop"
+              class="mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors hidden lg:block"
+            >
+              <svg
+                class="w-6 h-6 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                ></path>
+              </svg>
+            </button>
+            <div>
+              <h1 class="text-2xl font-bold text-gray-900">
+                <%= typeof title !=='undefined' ? title : 'Admin Dashboard' %>
+              </h1>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              id="theme-toggle"
+              class="p-2 rounded-lg hover:bg-gray-100 transition-colors text-xl"
+              data-tooltip="Toggle Dark Mode (T)"
+            >
+              🌙
+            </button>
+            <button
+              id="help-toggle"
+              class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              data-tooltip="Help & Shortcuts (?)"
+              onclick="window.adminUtils?.toggleHelpPanel()"
+            >
+              <svg
+                class="w-5 h-5 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </nav>
 
-                    <footer class="bg-white border-t border-gray-200 mt-auto">
-                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                            <p class="text-center text-gray-500 text-sm">&copy; <%= new Date().getFullYear() %>
-                                    MediTrack Admin. All rights reserved.</p>
-                        </div>
-                    </footer>
-                </div>
-                <% } %>
+      <!-- Page Content -->
+      <main class="p-6 min-h-screen"><%- body %></main>
 
-                    <!-- Mobile Sidebar Overlay -->
-                    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden lg:hidden"></div>
+      <!-- Footer -->
+      <footer class="bg-white border-t border-gray-200 mt-auto">
+        <div class="px-6 py-4">
+          <p class="text-center text-gray-500 text-sm">
+            &copy; <%= new Date().getFullYear() %> MediTrack Admin. All rights
+            reserved.
+          </p>
+        </div>
+      </footer>
+    </div>
+    <% } else { %>
+    <!-- No sidebar for non-authenticated users -->
+    <div class="flex-1">
+      <nav
+        class="bg-blue-600 border-b border-blue-700 sticky top-0 z-50 shadow-sm"
+      >
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex justify-between items-center h-16">
+            <div class="flex-shrink-0">
+              <a
+                href="/admin"
+                class="text-2xl font-bold text-white hover:text-blue-100"
+                >🏥 MediTrack Admin</a
+              >
+            </div>
+          </div>
+        </div>
+      </nav>
 
-                    <script src="/js/main.js"></script>
-    </body>
+      <main class="flex-1 py-8 min-h-screen">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"><%- body %></div>
+      </main>
 
+      <footer class="bg-white border-t border-gray-200 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <p class="text-center text-gray-500 text-sm">
+            &copy; <%= new Date().getFullYear() %> MediTrack Admin. All rights
+            reserved.
+          </p>
+        </div>
+      </footer>
+    </div>
+    <% } %>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div
+      id="sidebar-overlay"
+      class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden lg:hidden"
+    ></div>
+
+    <!-- Quick Actions Floating Panel -->
+    <div class="quick-actions-panel">
+      <button
+        id="quick-actions-btn"
+        class="quick-actions-btn"
+        data-tooltip="Quick Actions (Q)"
+      >
+        ⚡
+      </button>
+      <div id="quick-actions-menu" class="quick-actions-menu">
+        <a href="/admin/users" class="quick-action-item">
+          <span class="text-xl">👥</span>
+          <span>Users</span>
+          <span class="keyboard-shortcut ml-auto"
+            ><kbd class="key">U</kbd></span
+          >
+        </a>
+        <a href="/admin/clinics" class="quick-action-item">
+          <span class="text-xl">🏥</span>
+          <span>Clinics</span>
+          <span class="keyboard-shortcut ml-auto"
+            ><kbd class="key">C</kbd></span
+          >
+        </a>
+        <a href="/admin/analytics" class="quick-action-item">
+          <span class="text-xl">📊</span>
+          <span>Analytics</span>
+          <span class="keyboard-shortcut ml-auto"
+            ><kbd class="key">A</kbd></span
+          >
+        </a>
+        <a href="/admin/export/clinics" class="quick-action-item">
+          <span class="text-xl">📥</span>
+          <span>Export Data</span>
+        </a>
+        <div class="border-t border-gray-200 my-1"></div>
+        <button
+          onclick="window.adminUtils?.toggleTheme()"
+          class="quick-action-item"
+        >
+          <span class="text-xl">🌙</span>
+          <span>Toggle Theme</span>
+          <span class="keyboard-shortcut ml-auto"
+            ><kbd class="key">T</kbd></span
+          >
+        </button>
+      </div>
+    </div>
+
+    <!-- Help Panel -->
+    <div id="help-overlay" class="help-overlay"></div>
+    <div id="help-panel" class="help-panel">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-bold text-gray-900">Help & Shortcuts</h2>
+          <button
+            onclick="window.adminUtils?.toggleHelpPanel()"
+            class="p-2 hover:bg-gray-100 rounded-lg"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="space-y-6">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">
+              Keyboard Shortcuts
+            </h3>
+            <div class="space-y-2">
+              <div
+                class="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
+              >
+                <span class="text-sm text-gray-700">Go to Dashboard</span>
+                <kbd class="key">D</kbd>
+              </div>
+              <div
+                class="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
+              >
+                <span class="text-sm text-gray-700">Users</span>
+                <kbd class="key">U</kbd>
+              </div>
+              <div
+                class="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
+              >
+                <span class="text-sm text-gray-700">Clinics</span>
+                <kbd class="key">C</kbd>
+              </div>
+              <div
+                class="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
+              >
+                <span class="text-sm text-gray-700">Analytics</span>
+                <kbd class="key">A</kbd>
+              </div>
+              <div
+                class="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
+              >
+                <span class="text-sm text-gray-700">Toggle Theme</span>
+                <kbd class="key">T</kbd>
+              </div>
+              <div
+                class="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
+              >
+                <span class="text-sm text-gray-700">Quick Actions</span>
+                <kbd class="key">Q</kbd>
+              </div>
+              <div
+                class="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
+              >
+                <span class="text-sm text-gray-700">Show Help</span>
+                <kbd class="key">?</kbd>
+              </div>
+              <div
+                class="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
+              >
+                <span class="text-sm text-gray-700">Close Panels</span>
+                <kbd class="key">Esc</kbd>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">Features</h3>
+            <ul class="space-y-2 text-sm text-gray-700">
+              <li>
+                • <strong>Dark Mode:</strong> Toggle between light and dark
+                themes
+              </li>
+              <li>
+                • <strong>Quick Actions:</strong> Fast access to common tasks
+              </li>
+              <li>
+                • <strong>Keyboard Shortcuts:</strong> Navigate faster with keys
+              </li>
+              <li>
+                • <strong>Responsive Design:</strong> Works on all devices
+              </li>
+              <li>• <strong>Tooltips:</strong> Hover over elements for help</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+      <div class="loading-spinner"></div>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script src="/js/admin.js"></script>
+  </body>
 </html>

@@ -1,0 +1,193 @@
+<div>
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Analytics</h1>
+            <p class="text-gray-600 mt-2">Detailed system analytics and trends</p>
+        </div>
+        <a href="/admin" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+
+    <!-- Date Range Filter -->
+    <div class="card mb-6">
+        <form method="GET" action="/admin/analytics" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                <input type="date" name="startDate" value="<%= typeof filters !== 'undefined' && filters.startDate ? filters.startDate : '' %>"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                <input type="date" name="endDate" value="<%= typeof filters !== 'undefined' && filters.endDate ? filters.endDate : '' %>"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Quick Period</label>
+                <select name="period" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    <option value="7" <%= typeof filters !== 'undefined' && filters.period === '7' ? 'selected' : '' %>>Last 7 days</option>
+                    <option value="30" <%= typeof filters !== 'undefined' && filters.period === '30' ? 'selected' : '' %>>Last 30 days</option>
+                    <option value="90" <%= typeof filters !== 'undefined' && filters.period === '90' ? 'selected' : '' %>>Last 90 days</option>
+                    <option value="365" <%= typeof filters !== 'undefined' && filters.period === '365' ? 'selected' : '' %>>Last year</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Group By</label>
+                <select name="groupBy" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    <option value="day" <%= typeof filters !== 'undefined' && filters.groupBy === 'day' ? 'selected' : 'selected' %>>Daily</option>
+                    <option value="week" <%= typeof filters !== 'undefined' && filters.groupBy === 'week' ? 'selected' : '' %>>Weekly</option>
+                    <option value="month" <%= typeof filters !== 'undefined' && filters.groupBy === 'month' ? 'selected' : '' %>>Monthly</option>
+                    <option value="year" <%= typeof filters !== 'undefined' && filters.groupBy === 'year' ? 'selected' : '' %>>Yearly</option>
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button type="submit" class="w-full px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Apply Filters
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Comparison Metrics -->
+    <% if (typeof analytics !== 'undefined' && analytics.comparisons) { %>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="card">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Clinics</h3>
+                <div class="text-3xl font-bold text-gray-900 mb-1">
+                    <%= analytics.comparisons.clinics.monthOverMonth > 0 ? '+' : '' %><%= analytics.comparisons.clinics.monthOverMonth %>%
+                </div>
+                <p class="text-sm text-gray-600">Month-over-Month</p>
+                <p class="text-xs text-gray-500 mt-1">
+                    Year-over-Year: <%= analytics.comparisons.clinics.yearOverYear > 0 ? '+' : '' %><%= analytics.comparisons.clinics.yearOverYear %>%
+                </p>
+            </div>
+            <div class="card">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Users</h3>
+                <div class="text-3xl font-bold text-gray-900 mb-1">
+                    <%= analytics.comparisons.users.monthOverMonth > 0 ? '+' : '' %><%= analytics.comparisons.users.monthOverMonth %>%
+                </div>
+                <p class="text-sm text-gray-600">Month-over-Month</p>
+            </div>
+            <div class="card">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Patients</h3>
+                <div class="text-3xl font-bold text-gray-900 mb-1">
+                    <%= analytics.comparisons.patients.monthOverMonth > 0 ? '+' : '' %><%= analytics.comparisons.patients.monthOverMonth %>%
+                </div>
+                <p class="text-sm text-gray-600">Month-over-Month</p>
+            </div>
+            <div class="card">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Visits</h3>
+                <div class="text-3xl font-bold text-gray-900 mb-1">
+                    <%= analytics.comparisons.visits.monthOverMonth > 0 ? '+' : '' %><%= analytics.comparisons.visits.monthOverMonth %>%
+                </div>
+                <p class="text-sm text-gray-600">Month-over-Month</p>
+            </div>
+        </div>
+    <% } %>
+
+    <!-- Growth Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Clinic Growth -->
+        <% if (typeof analytics !== 'undefined' && analytics.clinicGrowth && analytics.clinicGrowth.length > 0) { %>
+            <div class="card">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Clinic Growth</h2>
+                <div class="h-64 flex items-end justify-between gap-1">
+                    <%
+                        const clinicCounts = analytics.clinicGrowth.map(s => parseInt(s.count) || 0);
+                        const clinicMax = clinicCounts.length > 0 ? Math.max(...clinicCounts) : 0;
+                        analytics.clinicGrowth.forEach(stat => {
+                            const count = parseInt(stat.count) || 0;
+                            const height = clinicMax > 0 ? (count / clinicMax) * 100 : 0;
+                    %>
+                        <div class="flex-1 flex flex-col items-center">
+                            <div class="w-full bg-green-500 rounded-t hover:bg-green-600 transition-colors"
+                                 style="--bar-height: <%= height %>%; height: var(--bar-height); min-height: 2px;"
+                                 title="<%= stat.date %>: <%= stat.count %> clinics">
+                            </div>
+                            <span class="text-xs text-gray-500 mt-2 transform -rotate-45 origin-top-left whitespace-nowrap">
+                                <%= new Date(stat.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %>
+                            </span>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- User Growth -->
+        <% if (typeof analytics !== 'undefined' && analytics.userGrowth && analytics.userGrowth.length > 0) { %>
+            <div class="card">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">User Growth</h2>
+                <div class="h-64 flex items-end justify-between gap-1">
+                    <%
+                        const userCounts = analytics.userGrowth.map(s => parseInt(s.count) || 0);
+                        const userMax = userCounts.length > 0 ? Math.max(...userCounts) : 0;
+                        analytics.userGrowth.forEach(stat => {
+                            const count = parseInt(stat.count) || 0;
+                            const height = userMax > 0 ? (count / userMax) * 100 : 0;
+                    %>
+                        <div class="flex-1 flex flex-col items-center">
+                            <div class="w-full bg-blue-500 rounded-t hover:bg-blue-600 transition-colors"
+                                 style="--bar-height: <%= height %>%; height: var(--bar-height); min-height: 2px;"
+                                 title="<%= stat.date %>: <%= stat.count %> users">
+                            </div>
+                            <span class="text-xs text-gray-500 mt-2 transform -rotate-45 origin-top-left whitespace-nowrap">
+                                <%= new Date(stat.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %>
+                            </span>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Patient Growth -->
+        <% if (typeof analytics !== 'undefined' && analytics.patientGrowth && analytics.patientGrowth.length > 0) { %>
+            <div class="card">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Patient Growth</h2>
+                <div class="h-64 flex items-end justify-between gap-1">
+                    <%
+                        const patientCounts = analytics.patientGrowth.map(s => parseInt(s.count) || 0);
+                        const patientMax = patientCounts.length > 0 ? Math.max(...patientCounts) : 0;
+                        analytics.patientGrowth.forEach(stat => {
+                            const count = parseInt(stat.count) || 0;
+                            const height = patientMax > 0 ? (count / patientMax) * 100 : 0;
+                    %>
+                        <div class="flex-1 flex flex-col items-center">
+                            <div class="w-full bg-purple-500 rounded-t hover:bg-purple-600 transition-colors"
+                                 style="--bar-height: <%= height %>%; height: var(--bar-height); min-height: 2px;"
+                                 title="<%= stat.date %>: <%= stat.count %> patients">
+                            </div>
+                            <span class="text-xs text-gray-500 mt-2 transform -rotate-45 origin-top-left whitespace-nowrap">
+                                <%= new Date(stat.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %>
+                            </span>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Visit Growth -->
+        <% if (typeof analytics !== 'undefined' && analytics.visitGrowth && analytics.visitGrowth.length > 0) { %>
+            <div class="card">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Visit Growth</h2>
+                <div class="h-64 flex items-end justify-between gap-1">
+                    <%
+                        const visitCounts = analytics.visitGrowth.map(s => parseInt(s.count) || 0);
+                        const visitMax = visitCounts.length > 0 ? Math.max(...visitCounts) : 0;
+                        analytics.visitGrowth.forEach(stat => {
+                            const count = parseInt(stat.count) || 0;
+                            const height = visitMax > 0 ? (count / visitMax) * 100 : 0;
+                    %>
+                        <div class="flex-1 flex flex-col items-center">
+                            <div class="w-full bg-yellow-500 rounded-t hover:bg-yellow-600 transition-colors"
+                                 style="--bar-height: <%= height %>%; height: var(--bar-height); min-height: 2px;"
+                                 title="<%= stat.date %>: <%= stat.count %> visits">
+                            </div>
+                            <span class="text-xs text-gray-500 mt-2 transform -rotate-45 origin-top-left whitespace-nowrap">
+                                <%= new Date(stat.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %>
+                            </span>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        <% } %>
+    </div>
+</div>
+

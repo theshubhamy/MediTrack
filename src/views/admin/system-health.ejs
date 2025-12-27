@@ -1,0 +1,205 @@
+<div>
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">System Health</h1>
+            <p class="text-gray-600 mt-2">Monitor system performance and health metrics</p>
+        </div>
+        <a href="/admin" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+
+    <!-- Health Score -->
+    <% if (typeof healthScore !== 'undefined') { %>
+        <div class="card mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">System Health Score</h2>
+                    <p class="text-gray-600">
+                        <% if (healthScore >= 80) { %>
+                            <span class="text-green-600 font-medium">Excellent</span>
+                        <% } else if (healthScore >= 60) { %>
+                            <span class="text-yellow-600 font-medium">Good</span>
+                        <% } else if (healthScore >= 40) { %>
+                            <span class="text-orange-600 font-medium">Fair</span>
+                        <% } else { %>
+                            <span class="text-red-600 font-medium">Poor</span>
+                        <% } %>
+                    </p>
+                </div>
+                <div class="text-6xl font-bold <%= healthScore >= 80 ? 'text-green-600' : healthScore >= 60 ? 'text-yellow-600' : healthScore >= 40 ? 'text-orange-600' : 'text-red-600' %>">
+                    <%= Math.round(healthScore) %>%
+                </div>
+            </div>
+            <div class="mt-4">
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div class="<%= healthScore >= 80 ? 'bg-green-600' : healthScore >= 60 ? 'bg-yellow-600' : healthScore >= 40 ? 'bg-orange-600' : 'bg-red-600' %> h-4 rounded-full transition-all"
+                         style="--bar-width: <%= Math.round(healthScore) %>%; width: var(--bar-width);"></div>
+                </div>
+            </div>
+        </div>
+    <% } %>
+
+    <!-- System Status Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Database</h3>
+                    <p class="text-sm text-gray-600 mt-1">
+                        Status:
+                        <span class="font-medium <%= systemHealth.database.status === 'healthy' ? 'text-green-600' : systemHealth.database.status === 'slow' ? 'text-yellow-600' : 'text-red-600' %>">
+                            <%= systemHealth.database.status.toUpperCase() %>
+                        </span>
+                    </p>
+                    <p class="text-sm text-gray-600 mt-1">
+                        Response Time: <%= systemHealth.database.responseTime %>ms
+                    </p>
+                </div>
+                <div class="text-4xl">
+                    <%= systemHealth.database.status === 'healthy' ? '✅' : systemHealth.database.status === 'slow' ? '⚠️' : '❌' %>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Uptime</h3>
+                    <p class="text-sm text-gray-600 mt-1">
+                        <%= Math.floor(systemHealth.uptime / 3600) %>h <%= Math.floor((systemHealth.uptime % 3600) / 60) %>m
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">
+                        <%= Math.floor(systemHealth.uptime / 86400) %> days
+                    </p>
+                </div>
+                <div class="text-4xl">⏱️</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Memory Usage</h3>
+                    <p class="text-sm text-gray-600 mt-1">
+                        <%= Math.round(systemHealth.memory.heapUsed / 1024 / 1024) %>MB / <%= Math.round(systemHealth.memory.heapTotal / 1024 / 1024) %>MB
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">
+                        <%= systemHealth.memory.heapTotal > 0 ? Math.round((systemHealth.memory.heapUsed / systemHealth.memory.heapTotal) * 100) : 0 %>% used
+                    </p>
+                </div>
+                <div class="text-4xl">💾</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Information -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="card">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">System Information</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between py-2 border-b border-gray-200">
+                    <span class="text-sm font-medium text-gray-700">Node.js Version</span>
+                    <span class="text-sm text-gray-900"><%= systemHealth.nodeVersion %></span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-200">
+                    <span class="text-sm font-medium text-gray-700">Platform</span>
+                    <span class="text-sm text-gray-900"><%= systemHealth.platform %></span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-200">
+                    <span class="text-sm font-medium text-gray-700">Architecture</span>
+                    <span class="text-sm text-gray-900"><%= systemHealth.arch %></span>
+                </div>
+                <div class="flex justify-between py-2">
+                    <span class="text-sm font-medium text-gray-700">Process ID</span>
+                    <span class="text-sm text-gray-900"><%= systemHealth.pid %></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Memory Details</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between py-2 border-b border-gray-200">
+                    <span class="text-sm font-medium text-gray-700">Heap Used</span>
+                    <span class="text-sm text-gray-900"><%= Math.round(systemHealth.memory.heapUsed / 1024 / 1024) %>MB</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-200">
+                    <span class="text-sm font-medium text-gray-700">Heap Total</span>
+                    <span class="text-sm text-gray-900"><%= Math.round(systemHealth.memory.heapTotal / 1024 / 1024) %>MB</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-200">
+                    <span class="text-sm font-medium text-gray-700">External</span>
+                    <span class="text-sm text-gray-900"><%= Math.round(systemHealth.memory.external / 1024 / 1024) %>MB</span>
+                </div>
+                <div class="flex justify-between py-2">
+                    <span class="text-sm font-medium text-gray-700">RSS</span>
+                    <span class="text-sm text-gray-900"><%= Math.round(systemHealth.memory.rss / 1024 / 1024) %>MB</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Statistics -->
+    <% if (typeof dbStats !== 'undefined' && dbStats.length > 0) { %>
+        <div class="card mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Database Table Sizes</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Table Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <% dbStats.forEach(stat => { %>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    <%= stat.tablename %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <%= stat.size %>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <% } %>
+
+    <!-- Recent Errors -->
+    <% if (typeof recentErrors !== 'undefined' && recentErrors.length > 0) { %>
+        <div class="card">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Recent Errors</h2>
+            <div class="space-y-3">
+                <% recentErrors.forEach(error => { %>
+                    <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-red-900"><%= error.action %></p>
+                                <p class="text-sm text-red-700 mt-1"><%= error.description || 'No description' %></p>
+                                <p class="text-xs text-red-600 mt-2">
+                                    <%= new Date(error.created_at).toLocaleString() %>
+                                    <% if (error.user) { %>
+                                        | User: <%= error.user.name %>
+                                    <% } %>
+                                    <% if (error.clinic) { %>
+                                        | Clinic: <%= error.clinic.name %>
+                                    <% } %>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+    <% } else { %>
+        <div class="card">
+            <div class="text-center py-8">
+                <div class="text-4xl mb-2">✅</div>
+                <p class="text-gray-600">No recent errors found</p>
+            </div>
+        </div>
+    <% } %>
+</div>
+

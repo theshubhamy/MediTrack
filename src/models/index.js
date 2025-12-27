@@ -13,6 +13,7 @@ const DoctorAvailability = require('./DoctorAvailability')(sequelize);
 const Medicine = require('./Medicine')(sequelize);
 const PrescriptionTemplate = require('./PrescriptionTemplate')(sequelize);
 const Invoice = require('./Invoice')(sequelize);
+const ActivityLog = require('./ActivityLog')(sequelize);
 
 // Define associations
 Clinic.hasMany(User, {
@@ -133,6 +134,28 @@ Clinic.hasMany(Invoice, {
 });
 Invoice.belongsTo(Clinic, { foreignKey: 'clinicId', as: 'clinic' });
 
+// ActivityLog associations
+User.hasMany(ActivityLog, {
+  foreignKey: 'userId',
+  as: 'activityLogs',
+  onDelete: 'SET NULL',
+});
+ActivityLog.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+Admin.hasMany(ActivityLog, {
+  foreignKey: 'adminId',
+  as: 'activityLogs',
+  onDelete: 'SET NULL',
+});
+ActivityLog.belongsTo(Admin, { foreignKey: 'adminId', as: 'admin' });
+
+Clinic.hasMany(ActivityLog, {
+  foreignKey: 'clinicId',
+  as: 'activityLogs',
+  onDelete: 'SET NULL',
+});
+ActivityLog.belongsTo(Clinic, { foreignKey: 'clinicId', as: 'clinic' });
+
 module.exports = {
   sequelize,
   Clinic,
@@ -147,4 +170,5 @@ module.exports = {
   Medicine,
   PrescriptionTemplate,
   Invoice,
+  ActivityLog,
 };

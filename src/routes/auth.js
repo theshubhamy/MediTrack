@@ -85,6 +85,14 @@ router.post('/admin/login', validateLogin, async (req, res) => {
     // Check password
     const isValidPassword = await bcrypt.compare(password, admin.passwordHash);
     if (!isValidPassword) {
+      // Log failed login attempt
+      const { logActivity } = require('../utils/activityLogger');
+      await logActivity({
+        action: 'ADMIN_LOGIN_FAILED',
+        description: `Failed login attempt for admin: ${email}`,
+        req,
+      });
+
       return res.render('admin/login', {
         title: 'Admin Login',
         layout: 'layouts/auth',
@@ -163,6 +171,14 @@ router.post('/login', validateLogin, async (req, res) => {
     });
 
     if (!user) {
+      // Log failed login attempt
+      const { logActivity } = require('../utils/activityLogger');
+      await logActivity({
+        action: 'USER_LOGIN_FAILED',
+        description: `Failed login attempt for user: ${email}`,
+        req,
+      });
+
       return res.render('auth/login', {
         title: 'Login',
         layout: 'layouts/auth',
@@ -173,6 +189,16 @@ router.post('/login', validateLogin, async (req, res) => {
     // Check password
     const isValidPassword = await bcrypt.compare(password, user.passwordHash);
     if (!isValidPassword) {
+      // Log failed login attempt
+      const { logActivity } = require('../utils/activityLogger');
+      await logActivity({
+        action: 'USER_LOGIN_FAILED',
+        description: `Failed login attempt for user: ${email}`,
+        userId: user.id,
+        clinicId: user.clinicId,
+        req,
+      });
+
       return res.render('auth/login', {
         title: 'Login',
         layout: 'layouts/auth',

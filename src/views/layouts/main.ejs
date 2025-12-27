@@ -1,232 +1,314 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      <%= typeof title !=='undefined' ? title + ' - MediTrack' : 'MediTrack' %>
+    </title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>
-            <%= typeof title !=='undefined' ? title + ' - MediTrack' : 'MediTrack' %>
-        </title>
-        <link rel="stylesheet" href="/css/style.css">
-    </head>
+  <body class="bg-gray-50 min-h-screen flex">
+    <% if (typeof user !=='undefined' && user) { %>
+    <!-- Sidebar -->
+    <aside
+      id="sidebar"
+      class="w-64 bg-white border-r border-gray-200 fixed h-full z-40 transition-all duration-300 ease-in-out"
+    >
+      <div class="flex flex-col h-full">
+        <!-- Logo -->
+        <div
+          class="p-6 border-b border-gray-200 flex items-center justify-between"
+        >
+          <a
+            href="/dashboard"
+            class="text-2xl font-bold text-blue-600 hover:text-blue-700 sidebar-logo-full"
+            >🏥 MediTrack</a
+          >
+          <span
+            class="text-2xl font-bold text-blue-600 sidebar-logo-collapsed hidden"
+            >🏥</span
+          >
+          <button
+            id="sidebar-toggle"
+            class="p-2 rounded-lg hover:bg-gray-100 transition-colors lg:hidden"
+          >
+            <svg
+              class="w-6 h-6 text-gray-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
+        </div>
 
-    <body class="bg-gray-50 min-h-screen flex">
-        <% if (typeof user !=='undefined' && user) { %>
-            <!-- Sidebar -->
-            <aside id="sidebar"
-                class="w-64 bg-white border-r border-gray-200 fixed h-full z-40 transition-all duration-300 ease-in-out">
-                <div class="flex flex-col h-full">
-                    <!-- Logo -->
-                    <div class="p-6 border-b border-gray-200 flex items-center justify-between">
-                        <a href="/dashboard"
-                            class="text-2xl font-bold text-blue-600 hover:text-blue-700 sidebar-logo-full">🏥
-                            MediTrack</a>
-                        <span class="text-2xl font-bold text-blue-600 sidebar-logo-collapsed hidden">🏥</span>
-                        <button id="sidebar-toggle"
-                            class="p-2 rounded-lg hover:bg-gray-100 transition-colors lg:hidden">
-                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
+        <!-- Navigation -->
+        <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+          <a
+            href="/dashboard"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title === 'Dashboard' ? 'bg-blue-50 text-blue-600' : '' %>"
+            title="Dashboard"
+          >
+            <span class="mr-3 text-xl">📊</span>
+            <span class="sidebar-text">Dashboard</span>
+          </a>
+          <a
+            href="/patients"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title.includes('Patient') ? 'bg-blue-50 text-blue-600' : '' %>"
+            title="Patients"
+          >
+            <span class="mr-3 text-xl">👥</span>
+            <span class="sidebar-text">Patients</span>
+          </a>
+          <a
+            href="/appointments"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title.includes('Appointment') ? 'bg-blue-50 text-blue-600' : '' %>"
+            title="Appointments"
+          >
+            <span class="mr-3 text-xl">📅</span>
+            <span class="sidebar-text">Appointments</span>
+          </a>
+          <a
+            href="/visits"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title.includes('Visit') ? 'bg-blue-50 text-blue-600' : '' %>"
+            title="Visits"
+          >
+            <span class="mr-3 text-xl">🏥</span>
+            <span class="sidebar-text">Visits</span>
+          </a>
+          <a
+            href="/medicines"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title.includes('Medicine') ? 'bg-blue-50 text-blue-600' : '' %>"
+            title="Medicines"
+          >
+            <span class="mr-3 text-xl">💊</span>
+            <span class="sidebar-text">Medicines</span>
+          </a>
+          <% if (user.role==='CLINIC_ADMIN' || user.role==='STAFF' ) { %>
+          <a
+            href="/doctors"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title.includes('Doctor') ? 'bg-blue-50 text-blue-600' : '' %>"
+            title="Doctors"
+          >
+            <span class="mr-3 text-xl">👨‍⚕️</span>
+            <span class="sidebar-text">Doctors</span>
+          </a>
+          <% } %>
+          <!-- My Profile - Available to all users -->
+          <a
+            href="/settings/profile"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && (title.includes('Profile') || title.includes('Password') || title.includes('Notification')) ? 'bg-blue-50 text-blue-600' : '' %>"
+            title="My Profile"
+          >
+            <span class="mr-3 text-xl">👤</span>
+            <span class="sidebar-text">My Profile</span>
+          </a>
+          <!-- Settings - Available to all users (shows different options based on role) -->
+          <a
+            href="/settings"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title.includes('Settings') && !title.includes('Profile') && !title.includes('Password') && !title.includes('Notification') ? 'bg-blue-50 text-blue-600' : '' %>"
+            title="Settings"
+          >
+            <span class="mr-3 text-xl">⚙️</span>
+            <span class="sidebar-text">Settings</span>
+          </a>
+        </nav>
 
-                    <!-- Navigation -->
-                    <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-                        <a href="/dashboard"
-                            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title === 'Dashboard' ? 'bg-blue-50 text-blue-600' : '' %>"
-                            title="Dashboard">
-                            <span class="mr-3 text-xl">📊</span>
-                            <span class="sidebar-text">Dashboard</span>
-                        </a>
-                        <a href="/patients"
-                            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title.includes('Patient') ? 'bg-blue-50 text-blue-600' : '' %>"
-                            title="Patients">
-                            <span class="mr-3 text-xl">👥</span>
-                            <span class="sidebar-text">Patients</span>
-                        </a>
-                        <a href="/appointments"
-                            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title.includes('Appointment') ? 'bg-blue-50 text-blue-600' : '' %>"
-                            title="Appointments">
-                            <span class="mr-3 text-xl">📅</span>
-                            <span class="sidebar-text">Appointments</span>
-                        </a>
-                        <a href="/visits"
-                            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title.includes('Visit') ? 'bg-blue-50 text-blue-600' : '' %>"
-                            title="Visits">
-                            <span class="mr-3 text-xl">🏥</span>
-                            <span class="sidebar-text">Visits</span>
-                        </a>
-                        <a href="/medicines"
-                            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title.includes('Medicine') ? 'bg-blue-50 text-blue-600' : '' %>"
-                            title="Medicines">
-                            <span class="mr-3 text-xl">💊</span>
-                            <span class="sidebar-text">Medicines</span>
-                        </a>
-                        <% if (user.role==='CLINIC_ADMIN' || user.role==='STAFF' ) { %>
-                            <a href="/doctors"
-                                class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title.includes('Doctor') ? 'bg-blue-50 text-blue-600' : '' %>"
-                                title="Doctors">
-                                <span class="mr-3 text-xl">👨‍⚕️</span>
-                                <span class="sidebar-text">Doctors</span>
-                            </a>
-                            <% } %>
-                        <!-- My Profile - Available to all users -->
-                        <a href="/settings/profile"
-                            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && (title.includes('Profile') || title.includes('Password') || title.includes('Notification')) ? 'bg-blue-50 text-blue-600' : '' %>"
-                            title="My Profile">
-                            <span class="mr-3 text-xl">👤</span>
-                            <span class="sidebar-text">My Profile</span>
-                        </a>
-                        <!-- Settings - Available to all users (shows different options based on role) -->
-                        <a href="/settings"
-                            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors group <%= typeof title !== 'undefined' && title.includes('Settings') && !title.includes('Profile') && !title.includes('Password') && !title.includes('Notification') ? 'bg-blue-50 text-blue-600' : '' %>"
-                            title="Settings">
-                            <span class="mr-3 text-xl">⚙️</span>
-                            <span class="sidebar-text">Settings</span>
-                        </a>
-                    </nav>
-
-                    <!-- User Info -->
-                    <div class="p-4 border-t border-gray-200">
-                        <a href="/settings/profile" class="block mb-3 hover:bg-gray-50 rounded-lg p-2 transition-colors">
-                            <div class="flex items-center">
-                                <div
-                                    class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <span class="text-blue-600 font-semibold">
-                                        <%= user.name.charAt(0).toUpperCase() %>
-                                    </span>
-                                </div>
-                                <div class="ml-3 sidebar-text flex-1">
-                                    <p class="text-sm font-medium text-gray-900">
-                                        <%= user.name %>
-                                    </p>
-                                    <p class="text-xs text-gray-500">
-                                        <%= user.role.replace('_', ' ' ) %>
-                                    </p>
-                                </div>
-                                <span class="sidebar-text text-gray-400">→</span>
-                            </div>
-                        </a>
-                        <a href="/logout"
-                            class="block w-full text-center px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors sidebar-text">
-                            Logout
-                        </a>
-                    </div>
-                </div>
-            </aside>
-
-            <!-- Main Content -->
-            <div id="main-content" class="flex-1 ml-64 transition-all duration-300 ease-in-out">
-                <!-- Top Navbar -->
-                <nav class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
-                    <div class="px-6 py-4 flex items-center">
-                        <button id="sidebar-toggle-mobile"
-                            class="mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors lg:hidden">
-                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 6h16M4 12h16M4 18h16"></path>
-                            </svg>
-                        </button>
-                        <button id="sidebar-toggle-desktop"
-                            class="mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors hidden lg:block">
-                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 6h16M4 12h16M4 18h16"></path>
-                            </svg>
-                        </button>
-                        <div class="flex-1">
-                            <h1 class="text-2xl font-bold text-gray-900">
-                                <%= typeof title !=='undefined' ? title : 'Dashboard' %>
-                            </h1>
-                            <% if (typeof clinic !=='undefined' && clinic) { %>
-                                <p class="text-sm text-gray-500 mt-1">
-                                    <%= clinic.name %>
-                                </p>
-                                <% } %>
-                        </div>
-                        <!-- Global Search -->
-                        <div class="flex-1 max-w-md ml-6">
-                            <form method="GET" action="/search" class="flex gap-2">
-                                <input
-                                    type="text"
-                                    name="q"
-                                    placeholder="Search patients, visits, appointments..."
-                                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                >
-                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                    </svg>
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </nav>
-
-                <!-- Page Content -->
-                <main class="p-6 min-h-screen">
-                    <%- body %>
-                </main>
-
-                <!-- Footer -->
-                <footer class="bg-white border-t border-gray-200 mt-auto">
-                    <div class="px-6 py-4">
-                        <p class="text-center text-gray-500 text-sm">&copy; <%= new Date().getFullYear() %> MediTrack.
-                                All
-                                rights reserved.</p>
-                    </div>
-                </footer>
+        <!-- User Info -->
+        <div class="p-4 border-t border-gray-200">
+          <a
+            href="/settings/profile"
+            class="block mb-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+          >
+            <div class="flex items-center">
+              <div
+                class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0"
+              >
+                <span class="text-blue-600 font-semibold">
+                  <%= user.name.charAt(0).toUpperCase() %>
+                </span>
+              </div>
+              <div class="ml-3 sidebar-text flex-1">
+                <p class="text-sm font-medium text-gray-900">
+                  <%= user.name %>
+                </p>
+                <p class="text-xs text-gray-500">
+                  <%= user.role.replace('_', ' ' ) %>
+                </p>
+              </div>
+              <span class="sidebar-text text-gray-400">→</span>
             </div>
-            <% } else { %>
-                <!-- No sidebar for non-authenticated users -->
-                <% if (typeof title !=='undefined' && title==='Home' ) { %>
-                    <!-- Home page - no wrapper, full page design -->
-                    <div class="flex-1 w-full">
-                        <%- body %>
-                    </div>
-                    <% } else { %>
-                        <!-- Other pages - with navbar and footer -->
-                        <div class="flex-1">
-                            <nav class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-                                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                                    <div class="flex justify-between items-center h-16">
-                                        <div class="flex-shrink-0">
-                                            <a href="/" class="text-2xl font-bold text-blue-600 hover:text-blue-700">🏥
-                                                MediTrack</a>
-                                        </div>
-                                        <div class="flex items-center">
-                                            <a href="/login"
-                                                class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
-                                                Clinic Login
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </nav>
+          </a>
+          <a
+            href="/logout"
+            class="block w-full text-center px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors sidebar-text"
+          >
+            Logout
+          </a>
+        </div>
+      </div>
+    </aside>
 
-                            <main class="flex-1 py-8 min-h-screen">
-                                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                                    <%- body %>
-                                </div>
-                            </main>
+    <!-- Main Content -->
+    <div
+      id="main-content"
+      class="flex-1 ml-64 transition-all duration-300 ease-in-out"
+    >
+      <!-- Top Navbar -->
+      <nav
+        class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm"
+      >
+        <div class="px-6 py-4 flex items-center">
+          <button
+            id="sidebar-toggle-mobile"
+            class="mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors lg:hidden"
+          >
+            <svg
+              class="w-6 h-6 text-gray-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              ></path>
+            </svg>
+          </button>
+          <button
+            id="sidebar-toggle-desktop"
+            class="mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors hidden lg:block"
+          >
+            <svg
+              class="w-6 h-6 text-gray-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              ></path>
+            </svg>
+          </button>
+          <div class="flex-1">
+            <h1 class="text-2xl font-bold text-gray-900">
+              <%= typeof title !=='undefined' ? title : 'Dashboard' %>
+            </h1>
+            <% if (typeof clinic !=='undefined' && clinic) { %>
+            <p class="text-sm text-gray-500 mt-1"><%= clinic.name %></p>
+            <% } %>
+          </div>
+          <!-- Global Search -->
+          <div class="flex-1 max-w-md ml-6">
+            <form method="GET" action="/search" class="flex gap-2">
+              <input
+                type="text"
+                name="q"
+                placeholder="Search patients, visits, appointments..."
+                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <button
+                type="submit"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  ></path>
+                </svg>
+              </button>
+            </form>
+          </div>
+        </div>
+      </nav>
 
-                            <footer class="bg-white border-t border-gray-200 mt-auto">
-                                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                                    <p class="text-center text-gray-500 text-sm">&copy; <%= new Date().getFullYear() %>
-                                            MediTrack. All
-                                            rights reserved.</p>
-                                </div>
-                            </footer>
-                        </div>
-                        <% } %>
-                            <% } %>
+      <!-- Page Content -->
+      <main class="p-6 min-h-screen"><%- body %></main>
 
-                                <!-- Mobile Sidebar Overlay -->
-                                <div id="sidebar-overlay"
-                                    class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden lg:hidden"></div>
+      <!-- Footer -->
+      <footer class="bg-white border-t border-gray-200 mt-auto">
+        <div class="px-6 py-4">
+          <p class="text-center text-gray-500 text-sm">
+            &copy; <%= new Date().getFullYear() %> MediTrack. All rights
+            reserved.
+          </p>
+        </div>
+      </footer>
+    </div>
+    <% } else { %>
+    <!-- No sidebar for non-authenticated users -->
+    <% if (typeof title !=='undefined' && title==='Home' ) { %>
+    <!-- Home page - no wrapper, full page design -->
+    <div class="flex-1 w-full"><%- body %></div>
+    <% } else { %>
+    <!-- Other pages - with navbar and footer -->
+    <div class="flex-1">
+      <nav
+        class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm"
+      >
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex justify-between items-center h-16">
+            <div class="flex-shrink-0">
+              <a
+                href="/"
+                class="text-2xl font-bold text-blue-600 hover:text-blue-700"
+                >🏥 MediTrack</a
+              >
+            </div>
+            <div class="flex items-center">
+              <a
+                href="/login"
+                class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Clinic Login
+              </a>
+            </div>
+          </div>
+        </div>
+      </nav>
 
-                                <script src="/js/main.js"></script>
-    </body>
+      <main class="flex-1 py-8 min-h-screen">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"><%- body %></div>
+      </main>
 
+      <footer class="bg-white border-t border-gray-200 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <p class="text-center text-gray-500 text-sm">
+            &copy; <%= new Date().getFullYear() %> MediTrack. All rights
+            reserved.
+          </p>
+        </div>
+      </footer>
+    </div>
+    <% } %> <% } %>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div
+      id="sidebar-overlay"
+      class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden lg:hidden"
+    ></div>
+
+    <script src="/js/main.js"></script>
+  </body>
 </html>

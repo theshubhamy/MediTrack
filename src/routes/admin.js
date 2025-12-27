@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { Clinic, User, Patient, Visit, sequelize } = require('../models');
+const { Clinic, User, Patient, Visit, Appointment, ActivityLog, sequelize } = require('../models');
 const { requireAdminAuth } = require('../middlewares/auth');
 const { Op } = require('sequelize');
+const { Sequelize } = require('sequelize');
+const { logActivity } = require('../utils/activityLogger');
 
 /**
  * GET /admin
@@ -10,20 +12,113 @@ const { Op } = require('sequelize');
  */
 router.get('/', requireAdminAuth, async (req, res) => {
   try {
-    // Get statistics
+    const { period = '30' } = req.query; // days
+    const daysAgo = parseInt(period);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - daysAgo);
+
+    // Get basic statistics
     const [
       totalClinics,
       activeClinics,
       totalUsers,
       totalPatients,
       totalVisits,
+      totalAppointments,
     ] = await Promise.all([
       Clinic.count(),
       Clinic.count({ where: { subscriptionStatus: 'ACTIVE' } }),
       User.count(),
       Patient.count(),
       Visit.count(),
+      Appointment.count(),
     ]);
+
+    // Growth metrics (new items in selected period)
+    const [
+      newClinics,
+      newUsers,
+      newPatients,
+      newVisits,
+      newAppointments,
+    ] = await Promise.all([
+      Clinic.count({ where: { created_at: { [Op.gte]: startDate } } }),
+      User.count({ where: { created_at: { [Op.gte]: startDate } } }),
+      Patient.count({ where: { created_at: { [Op.gte]: startDate } } }),
+      Visit.count({ where: { created_at: { [Op.gte]: startDate } } }),
+      Appointment.count({ where: { created_at: { [Op.gte]: startDate } } }),
+    ]);
+
+    // Time-based analytics - daily data for the last 30 days
+    const dailyStats = await Visit.findAll({
+      attributes: [
+        [sequelize.fn('DATE', sequelize.col('created_at')), 'date'],
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+      ],
+      where: {
+        created_at: { [Op.gte]: startDate },
+      },
+      group: [sequelize.fn('DATE', sequelize.col('created_at'))],
+      order: [[sequelize.fn('DATE', sequelize.col('created_at')), 'ASC']],
+      raw: true,
+    });
+
+    // User role distribution
+    const userRoleDistribution = await User.findAll({
+      attributes: [
+        'role',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+      ],
+      group: ['role'],
+      raw: true,
+    });
+
+    // Clinics by plan
+    const clinicsByPlan = await Clinic.findAll({
+      attributes: [
+        'plan',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+      ],
+      group: ['plan'],
+      raw: true,
+    });
+
+    // Clinic subscription status distribution
+    const clinicsByStatus = await Clinic.findAll({
+      attributes: [
+        'subscriptionStatus',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+      ],
+      group: ['subscriptionStatus'],
+      raw: true,
+    });
+
+    // Most active clinics (by visit count) - using raw SQL query
+    const mostActiveClinicsRaw = await sequelize.query(
+      `SELECT
+        c.id,
+        c.name,
+        c.plan,
+        c.subscription_status AS "subscriptionStatus",
+        COUNT(v.id) AS "visitCount"
+      FROM clinics c
+      LEFT JOIN visits v ON c.id = v.clinic_id
+      GROUP BY c.id, c.name, c.plan, c.subscription_status
+      ORDER BY COUNT(v.id) DESC
+      LIMIT 10`,
+      {
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    // Convert to plain objects with proper formatting
+    const mostActiveClinicsWithCounts = mostActiveClinicsRaw.map(item => ({
+      id: item.id,
+      name: item.name,
+      plan: item.plan,
+      subscriptionStatus: item.subscriptionStatus,
+      visitCount: parseInt(item.visitCount) || 0,
+    }));
 
     // Get recent clinics
     const recentClinics = await Clinic.findAll({
@@ -38,15 +133,13 @@ router.get('/', requireAdminAuth, async (req, res) => {
         },
       ],
     });
-    // Get clinics by plan
-    const clinicsByPlan = await Clinic.findAll({
-      attributes: [
-        'plan',
-        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
-      ],
-      group: ['plan'],
-      raw: true,
-    });
+
+    // System health metrics
+    const systemHealth = {
+      database: 'healthy', // Could check actual DB connection
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+    };
 
     res.render('admin/dashboard', {
       title: 'Admin Dashboard',
@@ -57,46 +150,28 @@ router.get('/', requireAdminAuth, async (req, res) => {
         totalUsers,
         totalPatients,
         totalVisits,
+        totalAppointments,
+      },
+      growth: {
+        newClinics,
+        newUsers,
+        newPatients,
+        newVisits,
+        newAppointments,
+        period: daysAgo,
+      },
+      analytics: {
+        dailyStats,
+        userRoleDistribution,
+        clinicsByPlan,
+        clinicsByStatus,
+        mostActiveClinics: mostActiveClinicsWithCounts,
       },
       recentClinics,
-      clinicsByPlan,
+      systemHealth,
     });
   } catch (error) {
     console.error('Admin dashboard error:', error);
-    res.status(500).render('errors/500', {
-      title: 'Server Error',
-      layout: 'layouts/admin',
-      error: process.env.NODE_ENV === 'development' ? error : {},
-      NODE_ENV: process.env.NODE_ENV,
-    });
-  }
-});
-
-/**
- * GET /admin/clinics
- * List all clinics
- */
-router.get('/clinics', requireAdminAuth, async (req, res) => {
-  try {
-    const clinics = await Clinic.findAll({
-      include: [
-        {
-          model: User,
-          as: 'users',
-          attributes: ['id', 'name', 'email', 'role'],
-          limit: 5,
-        },
-      ],
-      order: [['created_at', 'DESC']],
-    });
-    console.log('clinics', clinics);
-    res.render('admin/clinics', {
-      title: 'Manage Clinics',
-      layout: 'layouts/admin',
-      clinics,
-    });
-  } catch (error) {
-    console.error('Admin clinics error:', error);
     res.status(500).render('errors/500', {
       title: 'Server Error',
       layout: 'layouts/admin',
@@ -148,6 +223,1057 @@ router.get('/clinics/:id', requireAdminAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Admin clinic detail error:', error);
+    res.status(500).render('errors/500', {
+      title: 'Server Error',
+      layout: 'layouts/admin',
+      error: process.env.NODE_ENV === 'development' ? error : {},
+      NODE_ENV: process.env.NODE_ENV,
+    });
+  }
+});
+
+/**
+ * GET /admin/users
+ * System-wide user management
+ */
+router.get('/users', requireAdminAuth, async (req, res) => {
+  try {
+    const { search, role, status, clinicId, page = 1, limit = 50 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    const where = {};
+    if (search) {
+      where[Op.or] = [
+        { name: { [Op.iLike]: `%${search}%` } },
+        { email: { [Op.iLike]: `%${search}%` } },
+      ];
+    }
+    if (role) where.role = role;
+    if (status) where.status = status;
+    if (clinicId) where.clinicId = clinicId;
+
+    const { count, rows: users } = await User.findAndCountAll({
+      where,
+      include: [
+        {
+          model: Clinic,
+          as: 'clinic',
+          attributes: ['id', 'name'],
+        },
+      ],
+      limit: parseInt(limit),
+      offset,
+      order: [['created_at', 'DESC']],
+    });
+
+    // User role distribution
+    const roleDistribution = await User.findAll({
+      attributes: [
+        'role',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+      ],
+      group: ['role'],
+      raw: true,
+    });
+
+    // User status distribution
+    const statusDistribution = await User.findAll({
+      attributes: [
+        'status',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+      ],
+      group: ['status'],
+      raw: true,
+    });
+
+    // Get all clinics for filter
+    const clinics = await Clinic.findAll({
+      attributes: ['id', 'name'],
+      order: [['name', 'ASC']],
+    });
+
+    res.render('admin/users', {
+      title: 'User Management',
+      layout: 'layouts/admin',
+      users,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: count,
+        pages: Math.ceil(count / parseInt(limit)),
+      },
+      filters: { search, role, status, clinicId },
+      roleDistribution,
+      statusDistribution,
+      clinics,
+    });
+  } catch (error) {
+    console.error('Admin users error:', error);
+    res.status(500).render('errors/500', {
+      title: 'Server Error',
+      layout: 'layouts/admin',
+      error: process.env.NODE_ENV === 'development' ? error : {},
+      NODE_ENV: process.env.NODE_ENV,
+    });
+  }
+});
+
+/**
+ * GET /admin/users/:id
+ * View user details
+ */
+router.get('/users/:id', requireAdminAuth, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.id, {
+      include: [
+        {
+          model: Clinic,
+          as: 'clinic',
+        },
+        {
+          model: Visit,
+          as: 'visits',
+          limit: 10,
+          order: [['created_at', 'DESC']],
+          include: [
+            {
+              model: Patient,
+              as: 'patient',
+              attributes: ['id', 'name'],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!user) {
+      return res.status(404).render('errors/404', {
+        title: 'User Not Found',
+        layout: 'layouts/admin',
+      });
+    }
+
+    // Get user statistics
+    const visitCount = await Visit.count({ where: { doctorId: user.id } });
+    const appointmentCount = await Appointment.count({ where: { doctorId: user.id } });
+
+    res.render('admin/user-detail', {
+      title: `User: ${user.name}`,
+      layout: 'layouts/admin',
+      user,
+      stats: {
+        visitCount,
+        appointmentCount,
+      },
+    });
+  } catch (error) {
+    console.error('Admin user detail error:', error);
+    res.status(500).render('errors/500', {
+      title: 'Server Error',
+      layout: 'layouts/admin',
+      error: process.env.NODE_ENV === 'development' ? error : {},
+      NODE_ENV: process.env.NODE_ENV,
+    });
+  }
+});
+
+/**
+ * POST /admin/users/:id/status
+ * Update user status
+ */
+router.post('/users/:id/status', requireAdminAuth, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const user = await User.findByPk(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const oldStatus = user.status;
+    user.status = status;
+    await user.save();
+
+    // Log activity
+    await logActivity({
+      action: 'USER_STATUS_UPDATED',
+      entityType: 'User',
+      entityId: user.id,
+      description: `User status changed from ${oldStatus} to ${status}`,
+      adminId: req.session.admin?.id,
+      clinicId: user.clinicId,
+      req,
+    });
+
+    res.redirect(`/admin/users/${user.id}?success=User status updated`);
+  } catch (error) {
+    console.error('Update user status error:', error);
+    res.status(500).json({ error: 'Failed to update user status' });
+  }
+});
+
+/**
+ * POST /admin/users/bulk-status
+ * Bulk update user status
+ */
+router.post('/users/bulk-status', requireAdminAuth, async (req, res) => {
+  try {
+    const { userIds, status } = req.body;
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ error: 'No users selected' });
+    }
+
+    const users = await User.findAll({
+      where: { id: { [Op.in]: userIds } },
+    });
+
+    let updated = 0;
+    for (const user of users) {
+      const oldStatus = user.status;
+      user.status = status;
+      await user.save();
+
+      // Log activity
+      await logActivity({
+        action: 'USER_STATUS_UPDATED',
+        entityType: 'User',
+        entityId: user.id,
+        description: `Bulk update: User status changed from ${oldStatus} to ${status}`,
+        adminId: req.session.admin?.id,
+        clinicId: user.clinicId,
+        req,
+      });
+
+      updated++;
+    }
+
+    res.json({ success: true, message: `${updated} users updated`, count: updated });
+  } catch (error) {
+    console.error('Bulk update user status error:', error);
+    res.status(500).json({ error: 'Failed to update users' });
+  }
+});
+
+/**
+ * GET /admin/users/:id/activity
+ * View user activity history
+ */
+router.get('/users/:id/activity', requireAdminAuth, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.id, {
+      include: [{ model: Clinic, as: 'clinic', attributes: ['name'] }],
+    });
+
+    if (!user) {
+      return res.status(404).render('errors/404', {
+        title: 'User Not Found',
+        layout: 'layouts/admin',
+      });
+    }
+
+    const { page = 1, limit = 50 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    const { count, rows: activities } = await ActivityLog.findAndCountAll({
+      where: { userId: user.id },
+      limit: parseInt(limit),
+      offset,
+      order: [['created_at', 'DESC']],
+      include: [
+        { model: Clinic, as: 'clinic', attributes: ['name'], required: false },
+      ],
+    });
+
+    res.render('admin/user-activity', {
+      title: `User Activity: ${user.name}`,
+      layout: 'layouts/admin',
+      user,
+      activities,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: count,
+        pages: Math.ceil(count / parseInt(limit)),
+      },
+    });
+  } catch (error) {
+    console.error('User activity error:', error);
+    res.status(500).render('errors/500', {
+      title: 'Server Error',
+      layout: 'layouts/admin',
+      error: process.env.NODE_ENV === 'development' ? error : {},
+      NODE_ENV: process.env.NODE_ENV,
+    });
+  }
+});
+
+/**
+ * GET /admin/clinics (enhanced)
+ * List all clinics with search and filtering
+ */
+router.get('/clinics', requireAdminAuth, async (req, res) => {
+  try {
+    const { search, plan, status, page = 1, limit = 50 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    const where = {};
+    if (search) {
+      where[Op.or] = [
+        { name: { [Op.iLike]: `%${search}%` } },
+        { email: { [Op.iLike]: `%${search}%` } },
+      ];
+    }
+    if (plan) where.plan = plan;
+    if (status) where.subscriptionStatus = status;
+
+    const { count, rows: clinics } = await Clinic.findAndCountAll({
+      where,
+      include: [
+        {
+          model: User,
+          as: 'users',
+          attributes: ['id', 'name', 'email', 'role'],
+          limit: 5,
+        },
+      ],
+      limit: parseInt(limit),
+      offset,
+      order: [['created_at', 'DESC']],
+    });
+
+    // Get statistics for filters
+    const clinicsByPlan = await Clinic.findAll({
+      attributes: [
+        'plan',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+      ],
+      group: ['plan'],
+      raw: true,
+    });
+
+    const clinicsByStatus = await Clinic.findAll({
+      attributes: [
+        'subscriptionStatus',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+      ],
+      group: ['subscriptionStatus'],
+      raw: true,
+    });
+
+    res.render('admin/clinics', {
+      title: 'Manage Clinics',
+      layout: 'layouts/admin',
+      clinics,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: count,
+        pages: Math.ceil(count / parseInt(limit)),
+      },
+      filters: { search, plan, status },
+      clinicsByPlan,
+      clinicsByStatus,
+    });
+  } catch (error) {
+    console.error('Admin clinics error:', error);
+    res.status(500).render('errors/500', {
+      title: 'Server Error',
+      layout: 'layouts/admin',
+      error: process.env.NODE_ENV === 'development' ? error : {},
+      NODE_ENV: process.env.NODE_ENV,
+    });
+  }
+});
+
+/**
+ * POST /admin/clinics/:id/status
+ * Update clinic status
+ */
+router.post('/clinics/:id/status', requireAdminAuth, async (req, res) => {
+  try {
+    const { subscriptionStatus } = req.body;
+    const clinic = await Clinic.findByPk(req.params.id);
+
+    if (!clinic) {
+      return res.status(404).json({ error: 'Clinic not found' });
+    }
+
+    const oldStatus = clinic.subscriptionStatus;
+    clinic.subscriptionStatus = subscriptionStatus;
+    await clinic.save();
+
+    // Log activity
+    await logActivity({
+      action: 'CLINIC_STATUS_UPDATED',
+      entityType: 'Clinic',
+      entityId: clinic.id,
+      description: `Clinic status changed from ${oldStatus} to ${subscriptionStatus}`,
+      adminId: req.session.admin?.id,
+      clinicId: clinic.id,
+      req,
+    });
+
+    res.redirect(`/admin/clinics/${clinic.id}?success=Clinic status updated`);
+  } catch (error) {
+    console.error('Update clinic status error:', error);
+    res.status(500).json({ error: 'Failed to update clinic status' });
+  }
+});
+
+/**
+ * GET /admin/export/:type
+ * Export data as CSV
+ */
+router.get('/export/:type', requireAdminAuth, async (req, res) => {
+  try {
+    const { type } = req.params;
+    const { format = 'csv' } = req.query;
+
+    if (format === 'csv') {
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${type}-${Date.now()}.csv"`);
+
+      let data = [];
+      let headers = [];
+
+      switch (type) {
+        case 'clinics':
+          data = await Clinic.findAll({ raw: true });
+          headers = ['ID', 'Name', 'Email', 'Plan', 'Status', 'Created At'];
+          res.write(headers.join(',') + '\n');
+          data.forEach(clinic => {
+            res.write([
+              clinic.id,
+              `"${clinic.name}"`,
+              clinic.email,
+              clinic.plan,
+              clinic.subscriptionStatus,
+              clinic.created_at,
+            ].join(',') + '\n');
+          });
+          break;
+
+        case 'users':
+          data = await User.findAll({
+            include: [{ model: Clinic, as: 'clinic', attributes: ['name'] }],
+            raw: false,
+          });
+          headers = ['ID', 'Name', 'Email', 'Role', 'Status', 'Clinic', 'Created At'];
+          res.write(headers.join(',') + '\n');
+          for (const user of data) {
+            res.write([
+              user.id,
+              `"${user.name}"`,
+              user.email,
+              user.role,
+              user.status,
+              user.clinic ? `"${user.clinic.name}"` : '',
+              user.created_at,
+            ].join(',') + '\n');
+          }
+          break;
+
+        case 'patients':
+          data = await Patient.findAll({ raw: true });
+          headers = ['ID', 'Name', 'Phone', 'Age', 'Gender', 'Clinic ID', 'Created At'];
+          res.write(headers.join(',') + '\n');
+          data.forEach(patient => {
+            res.write([
+              patient.id,
+              `"${patient.name}"`,
+              patient.phone || '',
+              patient.age || '',
+              patient.gender || '',
+              patient.clinicId,
+              patient.created_at,
+            ].join(',') + '\n');
+          });
+          break;
+
+        case 'activity-logs':
+          data = await ActivityLog.findAll({
+            include: [
+              { model: User, as: 'user', attributes: ['name', 'email'], required: false },
+              { model: Clinic, as: 'clinic', attributes: ['name'], required: false },
+            ],
+            order: [['created_at', 'DESC']],
+            limit: 10000, // Limit to prevent huge exports
+          });
+          headers = ['ID', 'Timestamp', 'Action', 'Entity Type', 'Entity ID', 'Description', 'User', 'Clinic', 'IP Address'];
+          res.write(headers.join(',') + '\n');
+          data.forEach(log => {
+            res.write([
+              log.id,
+              log.created_at,
+              log.action,
+              log.entityType || '',
+              log.entityId || '',
+              `"${(log.description || '').replace(/"/g, '""')}"`,
+              log.user ? `"${log.user.name} (${log.user.email})"` : '',
+              log.clinic ? `"${log.clinic.name}"` : '',
+              log.ipAddress || '',
+            ].join(',') + '\n');
+          });
+          break;
+
+        default:
+          return res.status(400).json({ error: 'Invalid export type' });
+      }
+
+      res.end();
+    } else {
+      res.status(400).json({ error: 'Unsupported format' });
+    }
+  } catch (error) {
+    console.error('Export error:', error);
+    res.status(500).json({ error: 'Export failed' });
+  }
+});
+
+/**
+ * GET /admin/analytics
+ * Advanced analytics page with time-based trends
+ */
+router.get('/analytics', requireAdminAuth, async (req, res) => {
+  try {
+    const { startDate, endDate, period = '30', groupBy = 'day' } = req.query;
+    let dateFilter = {};
+
+    if (startDate && endDate) {
+      dateFilter = {
+        created_at: {
+          [Op.between]: [new Date(startDate), new Date(endDate)],
+        },
+      };
+    } else {
+      const daysAgo = parseInt(period);
+      const start = new Date();
+      start.setDate(start.getDate() - daysAgo);
+      dateFilter = { created_at: { [Op.gte]: start } };
+    }
+
+    // Determine grouping function based on groupBy parameter
+    let dateGroupFn;
+    switch (groupBy) {
+      case 'week':
+        dateGroupFn = sequelize.fn('DATE_TRUNC', 'week', sequelize.col('created_at'));
+        break;
+      case 'month':
+        dateGroupFn = sequelize.fn('DATE_TRUNC', 'month', sequelize.col('created_at'));
+        break;
+      case 'year':
+        dateGroupFn = sequelize.fn('DATE_TRUNC', 'year', sequelize.col('created_at'));
+        break;
+      default: // 'day'
+        dateGroupFn = sequelize.fn('DATE', sequelize.col('created_at'));
+    }
+
+    // Time-based analytics with different grouping
+    const [
+      clinicGrowth,
+      userGrowth,
+      patientGrowth,
+      visitGrowth,
+    ] = await Promise.all([
+      Clinic.findAll({
+        attributes: [
+          [dateGroupFn, 'date'],
+          [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+        ],
+        where: dateFilter,
+        group: [dateGroupFn],
+        order: [[dateGroupFn, 'ASC']],
+        raw: true,
+      }),
+      User.findAll({
+        attributes: [
+          [dateGroupFn, 'date'],
+          [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+        ],
+        where: dateFilter,
+        group: [dateGroupFn],
+        order: [[dateGroupFn, 'ASC']],
+        raw: true,
+      }),
+      Patient.findAll({
+        attributes: [
+          [dateGroupFn, 'date'],
+          [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+        ],
+        where: dateFilter,
+        group: [dateGroupFn],
+        order: [[dateGroupFn, 'ASC']],
+        raw: true,
+      }),
+      Visit.findAll({
+        attributes: [
+          [dateGroupFn, 'date'],
+          [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+        ],
+        where: dateFilter,
+        group: [dateGroupFn],
+        order: [[dateGroupFn, 'ASC']],
+        raw: true,
+      }),
+    ]);
+
+    // Calculate month-over-month and year-over-year comparisons
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastYear = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+    const thisYear = new Date(now.getFullYear(), 0, 1);
+
+    const [
+      clinicsThisMonth,
+      clinicsLastMonth,
+      clinicsThisYear,
+      clinicsLastYear,
+      usersThisMonth,
+      usersLastMonth,
+      patientsThisMonth,
+      patientsLastMonth,
+      visitsThisMonth,
+      visitsLastMonth,
+    ] = await Promise.all([
+      Clinic.count({ where: { created_at: { [Op.gte]: thisMonth } } }),
+      Clinic.count({ where: { created_at: { [Op.gte]: lastMonth, [Op.lt]: thisMonth } } }),
+      Clinic.count({ where: { created_at: { [Op.gte]: thisYear } } }),
+      Clinic.count({ where: { created_at: { [Op.gte]: lastYear, [Op.lt]: thisYear } } }),
+      User.count({ where: { created_at: { [Op.gte]: thisMonth } } }),
+      User.count({ where: { created_at: { [Op.gte]: lastMonth, [Op.lt]: thisMonth } } }),
+      Patient.count({ where: { created_at: { [Op.gte]: thisMonth } } }),
+      Patient.count({ where: { created_at: { [Op.gte]: lastMonth, [Op.lt]: thisMonth } } }),
+      Visit.count({ where: { created_at: { [Op.gte]: thisMonth } } }),
+      Visit.count({ where: { created_at: { [Op.gte]: lastMonth, [Op.lt]: thisMonth } } }),
+    ]);
+
+    const comparisons = {
+      clinics: {
+        monthOverMonth: clinicsLastMonth > 0 ? ((clinicsThisMonth - clinicsLastMonth) / clinicsLastMonth * 100).toFixed(1) : '0',
+        yearOverYear: clinicsLastYear > 0 ? ((clinicsThisYear - clinicsLastYear) / clinicsLastYear * 100).toFixed(1) : '0',
+      },
+      users: {
+        monthOverMonth: usersLastMonth > 0 ? ((usersThisMonth - usersLastMonth) / usersLastMonth * 100).toFixed(1) : '0',
+      },
+      patients: {
+        monthOverMonth: patientsLastMonth > 0 ? ((patientsThisMonth - patientsLastMonth) / patientsLastMonth * 100).toFixed(1) : '0',
+      },
+      visits: {
+        monthOverMonth: visitsLastMonth > 0 ? ((visitsThisMonth - visitsLastMonth) / visitsLastMonth * 100).toFixed(1) : '0',
+      },
+    };
+
+    res.render('admin/analytics', {
+      title: 'Analytics',
+      layout: 'layouts/admin',
+      analytics: {
+        clinicGrowth,
+        userGrowth,
+        patientGrowth,
+        visitGrowth,
+        comparisons,
+      },
+      filters: { startDate, endDate, period, groupBy },
+    });
+  } catch (error) {
+    console.error('Analytics error:', error);
+    res.status(500).render('errors/500', {
+      title: 'Server Error',
+      layout: 'layouts/admin',
+      error: process.env.NODE_ENV === 'development' ? error : {},
+      NODE_ENV: process.env.NODE_ENV,
+    });
+  }
+});
+
+/**
+ * GET /admin/activity-logs
+ * Activity logs and audit trail
+ */
+router.get('/activity-logs', requireAdminAuth, async (req, res) => {
+  try {
+    const {
+      search,
+      action,
+      entityType,
+      userId,
+      adminId,
+      clinicId,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 50
+    } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    const where = {};
+    if (search) {
+      where[Op.or] = [
+        { description: { [Op.iLike]: `%${search}%` } },
+        { action: { [Op.iLike]: `%${search}%` } },
+      ];
+    }
+    if (action) where.action = action;
+    if (entityType) where.entityType = entityType;
+    if (userId) where.userId = userId;
+    if (adminId) where.adminId = adminId;
+    if (clinicId) where.clinicId = clinicId;
+
+    if (startDate || endDate) {
+      where.created_at = {};
+      if (startDate) where.created_at[Op.gte] = new Date(startDate);
+      if (endDate) where.created_at[Op.lte] = new Date(endDate);
+    }
+
+    const { count, rows: logs } = await ActivityLog.findAndCountAll({
+      where,
+      include: [
+        { model: User, as: 'user', attributes: ['id', 'name', 'email'], required: false },
+        { model: Clinic, as: 'clinic', attributes: ['id', 'name'], required: false },
+      ],
+      limit: parseInt(limit),
+      offset,
+      order: [['created_at', 'DESC']],
+    });
+
+    // Get unique actions for filter
+    const actions = await ActivityLog.findAll({
+      attributes: [[sequelize.fn('DISTINCT', sequelize.col('action')), 'action']],
+      raw: true,
+    });
+
+    // Get unique entity types for filter
+    const entityTypes = await ActivityLog.findAll({
+      attributes: [[sequelize.fn('DISTINCT', sequelize.col('entity_type')), 'entityType']],
+      where: { entityType: { [Op.ne]: null } },
+      raw: true,
+    });
+
+    res.render('admin/activity-logs', {
+      title: 'Activity Logs',
+      layout: 'layouts/admin',
+      logs,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: count,
+        pages: Math.ceil(count / parseInt(limit)),
+      },
+      filters: { search, action, entityType, userId, adminId, clinicId, startDate, endDate },
+      actions: actions.map(a => a.action).filter(Boolean),
+      entityTypes: entityTypes.map(e => e.entityType).filter(Boolean),
+    });
+  } catch (error) {
+    console.error('Activity logs error:', error);
+    res.status(500).render('errors/500', {
+      title: 'Server Error',
+      layout: 'layouts/admin',
+      error: process.env.NODE_ENV === 'development' ? error : {},
+      NODE_ENV: process.env.NODE_ENV,
+    });
+  }
+});
+
+/**
+ * POST /admin/clinics/:id/plan
+ * Update clinic subscription plan
+ */
+router.post('/clinics/:id/plan', requireAdminAuth, async (req, res) => {
+  try {
+    const { plan } = req.body;
+    const clinic = await Clinic.findByPk(req.params.id);
+
+    if (!clinic) {
+      return res.status(404).json({ error: 'Clinic not found' });
+    }
+
+    const validPlans = ['FREE', 'STARTER', 'CLINIC', 'PRO'];
+    if (!validPlans.includes(plan)) {
+      return res.status(400).json({ error: 'Invalid plan' });
+    }
+
+    const oldPlan = clinic.plan;
+    clinic.plan = plan;
+    await clinic.save();
+
+    // Log activity
+    await logActivity({
+      action: 'CLINIC_PLAN_UPDATED',
+      entityType: 'Clinic',
+      entityId: clinic.id,
+      description: `Clinic plan changed from ${oldPlan} to ${plan}`,
+      adminId: req.session.admin?.id,
+      clinicId: clinic.id,
+      req,
+    });
+
+    res.redirect(`/admin/clinics/${clinic.id}?success=Clinic plan updated`);
+  } catch (error) {
+    console.error('Update clinic plan error:', error);
+    res.status(500).json({ error: 'Failed to update clinic plan' });
+  }
+});
+
+/**
+ * GET /admin/clinics/:id/health
+ * Clinic health dashboard
+ */
+router.get('/clinics/:id/health', requireAdminAuth, async (req, res) => {
+  try {
+    const clinic = await Clinic.findByPk(req.params.id, {
+      include: [
+        {
+          model: User,
+          as: 'users',
+          attributes: ['id', 'name', 'email', 'role', 'status'],
+        },
+      ],
+    });
+
+    if (!clinic) {
+      return res.status(404).render('errors/404', {
+        title: 'Clinic Not Found',
+        layout: 'layouts/admin',
+      });
+    }
+
+    // Get clinic statistics
+    const [
+      patientCount,
+      visitCount,
+      appointmentCount,
+      activeUsers,
+      recentVisits,
+    ] = await Promise.all([
+      Patient.count({ where: { clinicId: clinic.id } }),
+      Visit.count({ where: { clinicId: clinic.id } }),
+      Appointment.count({ where: { clinicId: clinic.id } }),
+      User.count({ where: { clinicId: clinic.id, status: 'ACTIVE' } }),
+      Visit.findAll({
+        where: { clinicId: clinic.id },
+        limit: 10,
+        order: [['created_at', 'DESC']],
+        include: [
+          { model: Patient, as: 'patient', attributes: ['name'] },
+          { model: User, as: 'doctor', attributes: ['name'] },
+        ],
+      }),
+    ]);
+
+    // Calculate health score (0-100)
+    let healthScore = 100;
+    if (clinic.subscriptionStatus !== 'ACTIVE') healthScore -= 30;
+    if (activeUsers === 0) healthScore -= 20;
+    if (visitCount === 0) healthScore -= 10;
+    if (patientCount === 0) healthScore -= 10;
+    if (clinic.plan === 'FREE' && visitCount > 100) healthScore -= 10; // May need upgrade
+
+    res.render('admin/clinic-health', {
+      title: `Clinic Health: ${clinic.name}`,
+      layout: 'layouts/admin',
+      clinic,
+      stats: {
+        patientCount,
+        visitCount,
+        appointmentCount,
+        activeUsers,
+        totalUsers: clinic.users.length,
+      },
+      healthScore: Math.max(0, healthScore),
+      recentVisits,
+    });
+  } catch (error) {
+    console.error('Clinic health error:', error);
+    res.status(500).render('errors/500', {
+      title: 'Server Error',
+      layout: 'layouts/admin',
+      error: process.env.NODE_ENV === 'development' ? error : {},
+      NODE_ENV: process.env.NODE_ENV,
+    });
+  }
+});
+
+/**
+ * GET /admin/security
+ * Security dashboard
+ */
+router.get('/security', requireAdminAuth, async (req, res) => {
+  try {
+    // Get failed login attempts from activity logs (both user and admin)
+    const failedLogins = await ActivityLog.findAll({
+      where: {
+        action: { [Op.in]: ['USER_LOGIN_FAILED', 'ADMIN_LOGIN_FAILED'] },
+      },
+      limit: 50,
+      order: [['created_at', 'DESC']],
+      include: [
+        { model: User, as: 'user', attributes: ['name', 'email'], required: false },
+        { model: Clinic, as: 'clinic', attributes: ['name'], required: false },
+      ],
+    });
+
+    // Get suspicious activities (multiple failed logins from same IP)
+    const suspiciousIPs = await sequelize.query(
+      `SELECT
+        ip_address,
+        COUNT(*) as attempt_count,
+        MAX(created_at) as last_attempt
+      FROM activity_logs
+      WHERE action IN ('USER_LOGIN_FAILED', 'ADMIN_LOGIN_FAILED')
+        AND ip_address IS NOT NULL
+        AND created_at > NOW() - INTERVAL '24 hours'
+      GROUP BY ip_address
+      HAVING COUNT(*) > 5
+      ORDER BY attempt_count DESC
+      LIMIT 10`,
+      { type: sequelize.QueryTypes.SELECT }
+    );
+
+    // Get users with inactive status
+    const inactiveUsers = await User.count({
+      where: { status: { [Op.in]: ['INACTIVE', 'SUSPENDED'] } },
+    });
+
+    // Get recent security events
+    const recentSecurityEvents = await ActivityLog.findAll({
+      where: {
+        action: {
+          [Op.in]: [
+            'USER_STATUS_UPDATED',
+            'CLINIC_STATUS_UPDATED',
+            'PASSWORD_CHANGED',
+            'ROLE_CHANGED',
+          ],
+        },
+      },
+      limit: 20,
+      order: [['created_at', 'DESC']],
+      include: [
+        { model: User, as: 'user', attributes: ['name', 'email'], required: false },
+        { model: Clinic, as: 'clinic', attributes: ['name'], required: false },
+      ],
+    });
+
+    res.render('admin/security', {
+      title: 'Security Dashboard',
+      layout: 'layouts/admin',
+      failedLogins,
+      suspiciousIPs,
+      inactiveUsers,
+      recentSecurityEvents,
+    });
+  } catch (error) {
+    console.error('Security dashboard error:', error);
+    res.status(500).render('errors/500', {
+      title: 'Server Error',
+      layout: 'layouts/admin',
+      error: process.env.NODE_ENV === 'development' ? error : {},
+      NODE_ENV: process.env.NODE_ENV,
+    });
+  }
+});
+
+/**
+ * GET /admin/system-health
+ * System health and monitoring
+ */
+router.get('/system-health', requireAdminAuth, async (req, res) => {
+  try {
+    // Database health check
+    let dbStatus = 'healthy';
+    let dbResponseTime = 0;
+    try {
+      const start = Date.now();
+      await sequelize.query('SELECT 1');
+      dbResponseTime = Date.now() - start;
+      if (dbResponseTime > 1000) dbStatus = 'slow';
+    } catch (error) {
+      dbStatus = 'unhealthy';
+    }
+
+    // System metrics
+    const memory = process.memoryUsage();
+    const systemHealth = {
+      database: {
+        status: dbStatus,
+        responseTime: dbResponseTime,
+      },
+      uptime: process.uptime(),
+      memory: memory,
+      nodeVersion: process.version,
+      platform: process.platform,
+      arch: process.arch,
+      pid: process.pid,
+    };
+
+    // Database statistics (PostgreSQL specific - optional)
+    let dbStats = [];
+    try {
+      dbStats = await sequelize.query(`
+        SELECT
+          schemaname,
+          tablename,
+          pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
+        FROM pg_tables
+        WHERE schemaname = 'public'
+        ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC
+        LIMIT 10
+      `, { type: sequelize.QueryTypes.SELECT });
+    } catch (error) {
+      // Database stats query failed (might not be PostgreSQL or no permissions)
+      console.warn('Database statistics query failed:', error.message);
+      dbStats = [];
+    }
+
+    // Recent errors from activity logs
+    let recentErrors = [];
+    try {
+      recentErrors = await ActivityLog.findAll({
+        where: {
+          action: { [Op.like]: '%ERROR%' },
+        },
+        limit: 10,
+        order: [['created_at', 'DESC']],
+        include: [
+          { model: User, as: 'user', attributes: ['name'], required: false },
+          { model: Clinic, as: 'clinic', attributes: ['name'], required: false },
+        ],
+      });
+    } catch (error) {
+      // Activity log query failed
+      console.warn('Recent errors query failed:', error.message);
+      recentErrors = [];
+    }
+
+    // Calculate overall system health score (0-100)
+    let healthScore = 100;
+    if (dbStatus === 'unhealthy') healthScore -= 40;
+    else if (dbStatus === 'slow') healthScore -= 20;
+    if (dbResponseTime > 2000) healthScore -= 10;
+
+    // Memory usage penalty (if using more than 80% of heap)
+    const memoryUsagePercent = memory.heapTotal > 0
+      ? (memory.heapUsed / memory.heapTotal) * 100
+      : 0;
+    if (memoryUsagePercent > 90) healthScore -= 20;
+    else if (memoryUsagePercent > 80) healthScore -= 10;
+
+    // Recent errors penalty
+    if (recentErrors.length > 10) healthScore -= 10;
+    else if (recentErrors.length > 5) healthScore -= 5;
+
+    res.render('admin/system-health', {
+      title: 'System Health',
+      layout: 'layouts/admin',
+      systemHealth,
+      healthScore: Math.max(0, Math.min(100, healthScore)),
+      dbStats,
+      recentErrors,
+    });
+  } catch (error) {
+    console.error('System health error:', error);
     res.status(500).render('errors/500', {
       title: 'Server Error',
       layout: 'layouts/admin',

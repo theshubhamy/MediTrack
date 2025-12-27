@@ -1,0 +1,265 @@
+<div>
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">User Management</h1>
+            <p class="text-gray-600 mt-2">Manage all system users</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="/admin/export/users" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                📥 Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-6">
+        <form method="GET" action="/admin/users" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                <input type="text" name="search" value="<%= typeof filters !== 'undefined' && filters.search ? filters.search : '' %>"
+                       placeholder="Name or email..."
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                <select name="role" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    <option value="">All Roles</option>
+                    <option value="CLINIC_ADMIN" <%= typeof filters !== 'undefined' && filters.role === 'CLINIC_ADMIN' ? 'selected' : '' %>>Clinic Admin</option>
+                    <option value="DOCTOR" <%= typeof filters !== 'undefined' && filters.role === 'DOCTOR' ? 'selected' : '' %>>Doctor</option>
+                    <option value="STAFF" <%= typeof filters !== 'undefined' && filters.role === 'STAFF' ? 'selected' : '' %>>Staff</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    <option value="">All Status</option>
+                    <option value="ACTIVE" <%= typeof filters !== 'undefined' && filters.status === 'ACTIVE' ? 'selected' : '' %>>Active</option>
+                    <option value="INACTIVE" <%= typeof filters !== 'undefined' && filters.status === 'INACTIVE' ? 'selected' : '' %>>Inactive</option>
+                    <option value="SUSPENDED" <%= typeof filters !== 'undefined' && filters.status === 'SUSPENDED' ? 'selected' : '' %>>Suspended</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Clinic</label>
+                <select name="clinicId" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    <option value="">All Clinics</option>
+                    <% if (typeof clinics !== 'undefined') { %>
+                        <% clinics.forEach(clinic => { %>
+                            <option value="<%= clinic.id %>" <%= typeof filters !== 'undefined' && filters.clinicId === clinic.id ? 'selected' : '' %>>
+                                <%= clinic.name %>
+                            </option>
+                        <% }); %>
+                    <% } %>
+                </select>
+            </div>
+            <div class="md:col-span-4 flex gap-2">
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Filter
+                </button>
+                <a href="/admin/users" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="card">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Role Distribution</h3>
+            <% if (typeof roleDistribution !== 'undefined' && roleDistribution.length > 0) { %>
+                <div class="space-y-3">
+                    <% roleDistribution.forEach(item => { %>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm text-gray-700"><%= item.role.replace('_', ' ') %></span>
+                                <span class="text-sm font-bold text-gray-900"><%= item.count %></span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full" style="--bar-width: <%= (parseInt(item.count) / pagination.total) * 100 %>%; width: var(--bar-width);"></div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } %>
+        </div>
+        <div class="card">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Status Distribution</h3>
+            <% if (typeof statusDistribution !== 'undefined' && statusDistribution.length > 0) { %>
+                <div class="space-y-3">
+                    <% statusDistribution.forEach(item => { %>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm text-gray-700"><%= item.status %></span>
+                                <span class="text-sm font-bold text-gray-900"><%= item.count %></span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-green-600 h-2 rounded-full" style="--bar-width: <%= (parseInt(item.count) / pagination.total) * 100 %>%; width: var(--bar-width);"></div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Users (<%= pagination.total %>)</h2>
+        </div>
+        <% if (users.length === 0) { %>
+            <div class="empty-state">
+                <p>No users found.</p>
+            </div>
+        <% } else { %>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left">
+                                <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clinic</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <% users.forEach(user => { %>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <input type="checkbox" class="user-checkbox" value="<%= user.id %>" onchange="updateBulkActions()">
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    <%= user.name %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <%= user.email %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                                        <%= user.role.replace('_', ' ') %>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <span class="px-2 py-1 text-xs rounded-full <%= user.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : user.status === 'SUSPENDED' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' %>">
+                                        <%= user.status %>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <%= user.clinic ? user.clinic.name : '-' %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <%= new Date(user.created_at).toLocaleDateString() %>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <a href="/admin/users/<%= user.id %>" class="btn btn-sm">View</a>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <% if (pagination.pages > 1) { %>
+                <div class="mt-6 flex items-center justify-between">
+                    <div class="text-sm text-gray-700">
+                        Showing <%= (pagination.page - 1) * pagination.limit + 1 %> to <%= Math.min(pagination.page * pagination.limit, pagination.total) %> of <%= pagination.total %> users
+                    </div>
+                    <div class="flex gap-2">
+                        <% if (pagination.page > 1) { %>
+                            <a href="?page=<%= pagination.page - 1 %><%= typeof filters !== 'undefined' && filters.search ? '&search=' + filters.search : '' %><%= typeof filters !== 'undefined' && filters.role ? '&role=' + filters.role : '' %><%= typeof filters !== 'undefined' && filters.status ? '&status=' + filters.status : '' %>"
+                               class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                                Previous
+                            </a>
+                        <% } %>
+                        <% if (pagination.page < pagination.pages) { %>
+                            <a href="?page=<%= pagination.page + 1 %><%= typeof filters !== 'undefined' && filters.search ? '&search=' + filters.search : '' %><%= typeof filters !== 'undefined' && filters.role ? '&role=' + filters.role : '' %><%= typeof filters !== 'undefined' && filters.status ? '&status=' + filters.status : '' %>"
+                               class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                                Next
+                            </a>
+                        <% } %>
+                    </div>
+                </div>
+            <% } %>
+        <% } %>
+    </div>
+</div>
+
+<script>
+    function toggleSelectAll(checkbox) {
+        const checkboxes = document.querySelectorAll('.user-checkbox');
+        checkboxes.forEach(cb => cb.checked = checkbox.checked);
+        updateBulkActions();
+    }
+
+    function updateBulkActions() {
+        const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+        const bulkActions = document.getElementById('bulk-actions');
+        const selectedCount = document.getElementById('selected-count');
+        const bulkUserIds = document.getElementById('bulk-user-ids');
+
+        if (checkboxes.length > 0) {
+            bulkActions.style.display = 'block';
+            selectedCount.textContent = checkboxes.length;
+            bulkUserIds.value = Array.from(checkboxes).map(cb => cb.value).join(',');
+        } else {
+            bulkActions.style.display = 'none';
+        }
+    }
+
+    function clearSelection() {
+        const checkboxes = document.querySelectorAll('.user-checkbox');
+        checkboxes.forEach(cb => cb.checked = false);
+        const selectAll = document.getElementById('select-all');
+        if (selectAll) selectAll.checked = false;
+        updateBulkActions();
+    }
+
+    // Handle bulk form submission
+    document.addEventListener('DOMContentLoaded', function() {
+        const bulkForm = document.getElementById('bulk-status-form');
+        if (bulkForm) {
+            bulkForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const userIds = formData.get('userIds').split(',').filter(id => id);
+                const status = formData.get('status');
+
+                if (!status || userIds.length === 0) {
+                    alert('Please select a status and at least one user');
+                    return;
+                }
+
+                if (confirm(`Are you sure you want to update ${userIds.length} user(s) to ${status}?`)) {
+                    fetch('/admin/users/bulk-status', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ userIds, status }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message);
+                            window.location.reload();
+                        } else {
+                            alert('Error: ' + (data.error || 'Failed to update users'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while updating users');
+                    });
+                }
+            });
+        }
+    });
+</script>
+
