@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Clinic, User, Patient, Visit, Appointment, ActivityLog, sequelize } = require('../models');
+const { Clinic, User, Patient, Visit, Appointment, ActivityLog, Invoice, sequelize } = require('../models');
 const { requireAdminAuth } = require('../middlewares/auth');
 const { Op } = require('sequelize');
 const { Sequelize } = require('sequelize');
@@ -1184,6 +1184,10 @@ router.get('/activity-logs', requireAdminAuth, async (req, res) => {
  * POST /admin/clinics/:id/plan
  * Update clinic subscription plan
  */
+/**
+ * POST /admin/clinics/:id/plan
+ * Update clinic subscription plan
+ */
 router.post('/clinics/:id/plan', requireAdminAuth, async (req, res) => {
   try {
     const { plan } = req.body;
@@ -1415,19 +1419,32 @@ router.get('/system-health', requireAdminAuth, async (req, res) => {
     // Database statistics (PostgreSQL specific - optional)
     let dbStats = [];
     try {
+      // Get table sizes, only for tables that actually exist
+      // Use a subquery to filter out non-existent tables before calculating sizes
       dbStats = await sequelize.query(`
+        WITH existing_tables AS (
+          SELECT table_name
+          FROM information_schema.tables
+          WHERE table_schema = 'public'
+            AND table_type = 'BASE TABLE'
+            AND table_name NOT LIKE 'pg_%'
+            AND table_name != 'spatial_ref_sys'
+        )
         SELECT
-          schemaname,
-          tablename,
-          pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
-        FROM pg_tables
-        WHERE schemaname = 'public'
-        ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC
+          'public' AS schemaname,
+          t.table_name AS tablename,
+          pg_size_pretty(pg_total_relation_size('public.'||t.table_name)) AS size
+        FROM existing_tables t
+        WHERE pg_total_relation_size('public.'||t.table_name) IS NOT NULL
+        ORDER BY pg_total_relation_size('public.'||t.table_name) DESC
         LIMIT 10
       `, { type: sequelize.QueryTypes.SELECT });
     } catch (error) {
       // Database stats query failed (might not be PostgreSQL or no permissions)
-      console.warn('Database statistics query failed:', error.message);
+      // This is expected in some environments, so we just log a warning
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Database statistics query failed:', error.message);
+      }
       dbStats = [];
     }
 
@@ -1484,6 +1501,330 @@ router.get('/system-health', requireAdminAuth, async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? error : {},
       NODE_ENV: process.env.NODE_ENV,
     });
+  }
+});
+
+/**
+ * GET /admin/financial
+ * Financial & Subscription Management Dashboard
+ */
+router.get('/financial', requireAdminAuth, async (req, res) => {
+  try {
+    const { startDate, endDate, period = '30' } = req.query;
+    let dateFilter = {};
+
+    if (startDate && endDate) {
+      dateFilter = {
+        created_at: {
+          [Op.between]: [new Date(startDate), new Date(endDate)],
+        },
+      };
+    } else {
+      const daysAgo = parseInt(period);
+      const start = new Date();
+      start.setDate(start.getDate() - daysAgo);
+      dateFilter = { created_at: { [Op.gte]: start } };
+    }
+
+    // Plan pricing
+    const planPricing = {
+      FREE: 0,
+      STARTER: 29,
+      CLINIC: 79,
+      PRO: 149,
+    };
+
+    // Revenue tracking - filter by paid_date for revenue, created_at for invoice count
+    let revenueWhere = {
+      status: 'PAID',
+    };
+
+    // Apply date filter to paid_date for revenue calculation
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      revenueWhere.paid_date = { [Op.between]: [start, end] };
+    } else if (startDate) {
+      revenueWhere.paid_date = { [Op.gte]: new Date(startDate) };
+    } else if (period) {
+      const daysAgo = parseInt(period);
+      const start = new Date();
+      start.setDate(start.getDate() - daysAgo);
+      revenueWhere.paid_date = { [Op.gte]: start };
+    }
+
+    const totalRevenue = await Invoice.sum('total_amount', {
+      where: revenueWhere,
+    }) || 0;
+
+    // Monthly revenue - filter by paid_date (not created_at)
+    let monthlyRevenueWhere = {
+      status: 'PAID',
+      paid_date: { [Op.ne]: null },
+    };
+
+    // Apply date filter to paid_date if provided
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      monthlyRevenueWhere.paid_date = { [Op.between]: [start, end] };
+    } else if (startDate) {
+      monthlyRevenueWhere.paid_date = { [Op.gte]: new Date(startDate) };
+    } else if (period) {
+      const daysAgo = parseInt(period);
+      const start = new Date();
+      start.setDate(start.getDate() - daysAgo);
+      monthlyRevenueWhere.paid_date = { [Op.gte]: start };
+    }
+
+    const monthlyRevenue = await Invoice.findAll({
+      attributes: [
+        [sequelize.fn('DATE_TRUNC', 'month', sequelize.col('paid_date')), 'month'],
+        [sequelize.fn('SUM', sequelize.col('total_amount')), 'revenue'],
+      ],
+      where: monthlyRevenueWhere,
+      group: [sequelize.fn('DATE_TRUNC', 'month', sequelize.col('paid_date'))],
+      order: [[sequelize.fn('DATE_TRUNC', 'month', sequelize.col('paid_date')), 'ASC']],
+      raw: true,
+    });
+
+    // Subscription plan analytics
+    const planDistribution = await Clinic.findAll({
+      attributes: [
+        'plan',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+      ],
+      group: ['plan'],
+      raw: true,
+    });
+
+    const planRevenue = await Invoice.findAll({
+      attributes: [
+        'plan',
+        [sequelize.fn('SUM', sequelize.col('total_amount')), 'revenue'],
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+      ],
+      where: revenueWhere,
+      group: ['plan'],
+      raw: true,
+    });
+
+    // Payment history - filter by paid_date
+    const recentPayments = await Invoice.findAll({
+      where: revenueWhere,
+      include: [
+        { model: Clinic, as: 'clinic', attributes: ['id', 'name'] },
+      ],
+      order: [['paid_date', 'DESC']],
+      limit: 50,
+    });
+
+    // Churn rate tracking
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const activeLastMonth = await Clinic.count({
+      where: {
+        subscriptionStatus: 'ACTIVE',
+        created_at: { [Op.lt]: thisMonth },
+      },
+    });
+
+    const churnedThisMonth = await Clinic.count({
+      where: {
+        subscriptionStatus: { [Op.in]: ['INACTIVE', 'EXPIRED'] },
+        updated_at: { [Op.between]: [thisMonth, now] },
+      },
+    });
+
+    const churnRate = activeLastMonth > 0 ? ((churnedThisMonth / activeLastMonth) * 100).toFixed(2) : 0;
+
+    // Subscription upgrades/downgrades tracking
+    const planChanges = await ActivityLog.findAll({
+      where: {
+        action: { [Op.in]: ['CLINIC_PLAN_UPDATED', 'CLINIC_STATUS_UPDATED'] },
+        ...dateFilter,
+      },
+      include: [
+        { model: Clinic, as: 'clinic', attributes: ['id', 'name', 'plan'] },
+      ],
+      order: [['created_at', 'DESC']],
+      limit: 50,
+    });
+
+    // Upcoming renewals (invoices due in next 30 days)
+    const upcomingRenewals = await Invoice.findAll({
+      where: {
+        status: 'PENDING',
+        dueDate: {
+          [Op.between]: [new Date(), new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)],
+        },
+      },
+      include: [
+        { model: Clinic, as: 'clinic', attributes: ['id', 'name', 'plan', 'email'] },
+      ],
+      order: [['dueDate', 'ASC']],
+    });
+
+    // Revenue forecasting (next 3 months based on current trends)
+    const last3MonthsRevenue = await Invoice.findAll({
+      attributes: [
+        [sequelize.fn('DATE_TRUNC', 'month', sequelize.col('paid_date')), 'month'],
+        [sequelize.fn('SUM', sequelize.col('total_amount')), 'revenue'],
+      ],
+      where: {
+        status: 'PAID',
+        paid_date: {
+          [Op.gte]: new Date(now.getFullYear(), now.getMonth() - 3, 1),
+        },
+      },
+      group: [sequelize.fn('DATE_TRUNC', 'month', sequelize.col('paid_date'))],
+      order: [[sequelize.fn('DATE_TRUNC', 'month', sequelize.col('paid_date')), 'ASC']],
+      raw: true,
+    });
+
+    // Calculate average monthly revenue for forecasting
+    const avgMonthlyRevenue = last3MonthsRevenue.length > 0
+      ? last3MonthsRevenue.reduce((sum, m) => sum + parseFloat(m.revenue || 0), 0) / last3MonthsRevenue.length
+      : 0;
+
+    // Payment methods distribution
+    const paymentMethods = await Invoice.findAll({
+      attributes: [
+        'paymentMethod',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+        [sequelize.fn('SUM', sequelize.col('total_amount')), 'total'],
+      ],
+      where: {
+        ...revenueWhere,
+        paymentMethod: { [Op.ne]: null },
+      },
+      group: ['paymentMethod'],
+      raw: true,
+    });
+
+    // Statistics summary
+    const stats = {
+      totalRevenue: parseFloat(totalRevenue) || 0,
+      totalInvoices: await Invoice.count({ where: revenueWhere }),
+      pendingInvoices: await Invoice.count({ where: { status: 'PENDING' } }),
+      overdueInvoices: await Invoice.count({
+        where: {
+          status: 'OVERDUE',
+          dueDate: { [Op.lt]: new Date() },
+        },
+      }),
+      activeSubscriptions: await Clinic.count({ where: { subscriptionStatus: 'ACTIVE' } }),
+      churnRate: parseFloat(churnRate),
+      avgMonthlyRevenue: parseFloat(avgMonthlyRevenue) || 0,
+    };
+
+    res.render('admin/financial', {
+      title: 'Financial & Subscription Management',
+      layout: 'layouts/admin',
+      stats,
+      monthlyRevenue,
+      planDistribution,
+      planRevenue,
+      recentPayments,
+      planChanges,
+      upcomingRenewals,
+      paymentMethods,
+      forecast: {
+        nextMonth: avgMonthlyRevenue,
+        next3Months: avgMonthlyRevenue * 3,
+      },
+      filters: { startDate, endDate, period },
+    });
+  } catch (error) {
+    console.error('Financial dashboard error:', error);
+    res.status(500).render('errors/500', {
+      title: 'Server Error',
+      layout: 'layouts/admin',
+      error: process.env.NODE_ENV === 'development' ? error : {},
+      NODE_ENV: process.env.NODE_ENV,
+    });
+  }
+});
+
+/**
+ * GET /admin/financial/export
+ * Export financial reports
+ */
+router.get('/financial/export', requireAdminAuth, async (req, res) => {
+  try {
+    const { format = 'csv', startDate, endDate, type = 'revenue' } = req.query;
+    let dateFilter = {};
+
+    if (startDate && endDate) {
+      dateFilter = {
+        created_at: {
+          [Op.between]: [new Date(startDate), new Date(endDate)],
+        },
+      };
+    }
+
+    if (format === 'csv') {
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="financial-report-${Date.now()}.csv"`);
+
+      if (type === 'revenue') {
+        const invoices = await Invoice.findAll({
+          where: {
+            status: 'PAID',
+            ...dateFilter,
+          },
+          include: [
+            { model: Clinic, as: 'clinic', attributes: ['name'] },
+          ],
+          order: [['paid_date', 'DESC']],
+        });
+
+        const headers = ['Invoice Number', 'Date', 'Clinic', 'Plan', 'Amount', 'Tax', 'Total', 'Payment Method', 'Transaction ID'];
+        res.write(headers.join(',') + '\n');
+
+        invoices.forEach(invoice => {
+          res.write([
+            invoice.invoiceNumber,
+            invoice.paid_date || invoice.created_at,
+            `"${invoice.clinic ? invoice.clinic.name.replace(/"/g, '""') : ''}"`,
+            invoice.plan,
+            invoice.amount,
+            invoice.taxAmount || 0,
+            invoice.totalAmount,
+            invoice.paymentMethod || '',
+            invoice.paymentTransactionId || '',
+          ].join(',') + '\n');
+        });
+      } else if (type === 'subscriptions') {
+        const clinics = await Clinic.findAll({
+          attributes: ['id', 'name', 'plan', 'subscriptionStatus', 'created_at'],
+          order: [['created_at', 'DESC']],
+        });
+
+        const headers = ['Clinic Name', 'Plan', 'Status', 'Created Date'];
+        res.write(headers.join(',') + '\n');
+
+        clinics.forEach(clinic => {
+          res.write([
+            `"${clinic.name.replace(/"/g, '""')}"`,
+            clinic.plan,
+            clinic.subscriptionStatus,
+            clinic.created_at,
+          ].join(',') + '\n');
+        });
+      }
+
+      res.end();
+    } else {
+      res.status(400).json({ error: 'Unsupported format' });
+    }
+  } catch (error) {
+    console.error('Financial export error:', error);
+    res.status(500).json({ error: 'Export failed' });
   }
 });
 
