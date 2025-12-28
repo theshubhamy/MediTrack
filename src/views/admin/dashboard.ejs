@@ -4,18 +4,29 @@
             <h1 class="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
             <p class="text-gray-600 mt-2">System-wide statistics and management</p>
         </div>
-        <div class="flex gap-2 flex-wrap">
-            <select id="periodFilter" class="px-4 py-2 border border-gray-300 rounded-lg"
-                data-tooltip="Select time period for growth metrics">
-                <option value="7" <%=typeof growth !=='undefined' && growth.period===7 ? 'selected' : '' %>>Last 7 days
-                </option>
-                <option value="30" <%=typeof growth !=='undefined' && growth.period===30 ? 'selected' : '' %>>Last 30
-                    days</option>
-                <option value="90" <%=typeof growth !=='undefined' && growth.period===90 ? 'selected' : '' %>>Last 90
-                    days</option>
-                <option value="365" <%=typeof growth !=='undefined' && growth.period===365 ? 'selected' : '' %>>Last
-                    year</option>
-            </select>
+        <div class="flex gap-2 flex-wrap items-center">
+            <div class="flex gap-2 items-center">
+                <select id="periodFilter" class="px-4 py-2 border border-gray-300 rounded-lg"
+                    data-tooltip="Select time period for growth metrics">
+                    <option value="7" <%=typeof growth !=='undefined' && growth.period===7 ? 'selected' : '' %>>Last 7 days</option>
+                    <option value="30" <%=typeof growth !=='undefined' && growth.period===30 ? 'selected' : '' %>>Last 30 days</option>
+                    <option value="90" <%=typeof growth !=='undefined' && growth.period===90 ? 'selected' : '' %>>Last 90 days</option>
+                    <option value="365" <%=typeof growth !=='undefined' && growth.period===365 ? 'selected' : '' %>>Last year</option>
+                    <option value="custom" <%=typeof growth !=='undefined' && growth.isCustomRange ? 'selected' : '' %>>Custom Range</option>
+                </select>
+                <div id="customDateRange" class="hidden flex gap-2 items-center">
+                    <input type="date" id="startDate" class="px-4 py-2 border border-gray-300 rounded-lg"
+                        value="<%=typeof growth !=='undefined' && growth.startDate ? growth.startDate : '' %>"
+                        data-tooltip="Start date">
+                    <span class="text-gray-600">to</span>
+                    <input type="date" id="endDate" class="px-4 py-2 border border-gray-300 rounded-lg"
+                        value="<%=typeof growth !=='undefined' && growth.endDate ? growth.endDate : '' %>"
+                        data-tooltip="End date">
+                    <button id="applyDateRange" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                        Apply
+                    </button>
+                </div>
+            </div>
             <a href="/admin/analytics"
                 class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 data-tooltip="View detailed analytics and charts">
@@ -349,8 +360,51 @@
 
 <script>
     // Period filter
-    document.getElementById('periodFilter')?.addEventListener('change', function () {
-        const period = this.value;
-        window.location.href = `/admin?period=${period}`;
+    const periodFilter = document.getElementById('periodFilter');
+    const customDateRange = document.getElementById('customDateRange');
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    const applyDateRangeBtn = document.getElementById('applyDateRange');
+
+    // Show/hide custom date range based on selection
+    periodFilter?.addEventListener('change', function () {
+        if (this.value === 'custom') {
+            customDateRange.classList.remove('hidden');
+            // Set default dates if not set
+            if (!startDateInput.value) {
+                const endDate = new Date();
+                const startDate = new Date();
+                startDate.setDate(startDate.getDate() - 30);
+                startDateInput.value = startDate.toISOString().split('T')[0];
+                endDateInput.value = endDate.toISOString().split('T')[0];
+            }
+        } else {
+            customDateRange.classList.add('hidden');
+            // Apply period filter immediately
+            window.location.href = `/admin?period=${this.value}`;
+        }
     });
+
+    // Apply custom date range
+    applyDateRangeBtn?.addEventListener('click', function () {
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+
+        if (!startDate || !endDate) {
+            alert('Please select both start and end dates');
+            return;
+        }
+
+        if (new Date(startDate) > new Date(endDate)) {
+            alert('Start date must be before end date');
+            return;
+        }
+
+        window.location.href = `/admin?start_date=${startDate}&end_date=${endDate}`;
+    });
+
+    // Show custom date range if it's already selected
+    <% if (typeof growth !== 'undefined' && growth.isCustomRange) { %>
+        if (customDateRange) customDateRange.classList.remove('hidden');
+    <% } %>
 </script>

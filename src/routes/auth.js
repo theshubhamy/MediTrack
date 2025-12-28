@@ -109,6 +109,21 @@ router.post('/admin/login', validateLogin, async (req, res) => {
       });
     }
 
+    // Update admin last login and log successful login
+    admin.lastLogin = new Date();
+    await admin.save();
+
+    // Log successful admin login
+    const { logActivity } = require('../utils/activityLogger');
+    await logActivity({
+      action: 'ADMIN_LOGIN_SUCCESS',
+      entityType: 'Admin',
+      entityId: admin.id,
+      description: `Admin logged in successfully`,
+      adminId: admin.id,
+      req,
+    });
+
     // Store admin data before session regeneration
     const adminData = {
       id: admin.id,
@@ -230,7 +245,7 @@ router.post('/login', validateLogin, async (req, res) => {
     };
 
     // Regenerate session ID for security, then set user data
-    req.session.regenerate(err => {
+    req.session.regenerate(async err => {
       if (err) {
         console.error('Session regeneration error:', err);
         return res.render('auth/login', {
@@ -240,22 +255,57 @@ router.post('/login', validateLogin, async (req, res) => {
         });
       }
 
-      // Set user and clinic data on new session
-      req.session.user = userData;
-      req.session.clinic = clinicData;
-      req.session.save(saveErr => {
-        if (saveErr) {
-          console.error('Session save error:', saveErr);
-          return res.render('auth/login', {
-            title: 'Login',
-            layout: 'layouts/auth',
-            error: 'An error occurred. Please try again.',
-          });
-        }
-        // Redirect based on user role
-        const redirectUrl = getRoleRedirect(user.role);
-        res.redirect(redirectUrl);
-      });
+      try {
+        // Update last login and log successful login
+        user.lastLogin = new Date();
+        await user.save();
+
+        // Log successful login
+        const { logActivity } = require('../utils/activityLogger');
+        await logActivity({
+          action: 'USER_LOGIN_SUCCESS',
+          entityType: 'User',
+          entityId: user.id,
+          description: `User logged in successfully`,
+          userId: user.id,
+          clinicId: user.clinicId,
+          req,
+        });
+
+        // Set user and clinic data on new session
+        req.session.user = userData;
+        req.session.clinic = clinicData;
+        req.session.save(saveErr => {
+          if (saveErr) {
+            console.error('Session save error:', saveErr);
+            return res.render('auth/login', {
+              title: 'Login',
+              layout: 'layouts/auth',
+              error: 'An error occurred. Please try again.',
+            });
+          }
+          // Redirect based on user role
+          const redirectUrl = getRoleRedirect(user.role);
+          res.redirect(redirectUrl);
+        });
+      } catch (error) {
+        console.error('Error updating user login:', error);
+        // Still proceed with login even if logging fails
+        req.session.user = userData;
+        req.session.clinic = clinicData;
+        req.session.save(saveErr => {
+          if (saveErr) {
+            console.error('Session save error:', saveErr);
+            return res.render('auth/login', {
+              title: 'Login',
+              layout: 'layouts/auth',
+              error: 'An error occurred. Please try again.',
+            });
+          }
+          const redirectUrl = getRoleRedirect(user.role);
+          res.redirect(redirectUrl);
+        });
+      }
     });
   } catch (error) {
     console.error('Login error:', error);

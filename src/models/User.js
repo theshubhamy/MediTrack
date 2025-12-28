@@ -74,6 +74,11 @@ module.exports = sequelize => {
         defaultValue: 'UTC',
         allowNull: true,
       },
+      lastLogin: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: 'last_login',
+      },
     },
     {
       tableName: 'users',

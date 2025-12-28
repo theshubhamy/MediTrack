@@ -27,6 +27,11 @@ module.exports = sequelize => {
         type: DataTypes.ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED'),
         defaultValue: 'ACTIVE',
       },
+      lastLogin: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: 'last_login',
+      },
     },
     {
       tableName: 'admins',

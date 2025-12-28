@@ -12,10 +12,22 @@ const { logActivity } = require('../utils/activityLogger');
  */
 router.get('/', requireAdminAuth, async (req, res) => {
   try {
-    const { period = '30' } = req.query; // days
-    const daysAgo = parseInt(period);
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - daysAgo);
+    // Support both period (days) and custom date range
+    let startDate, endDate;
+    const { period, start_date, end_date } = req.query;
+
+    if (start_date && end_date) {
+      // Custom date range
+      startDate = new Date(start_date);
+      endDate = new Date(end_date);
+      endDate.setHours(23, 59, 59, 999); // End of day
+    } else {
+      // Default to period-based (backward compatible)
+      const daysAgo = parseInt(period || '30');
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysAgo);
+      endDate = new Date();
+    }
 
     // Get basic statistics
     const [
@@ -42,21 +54,21 @@ router.get('/', requireAdminAuth, async (req, res) => {
       newVisits,
       newAppointments,
     ] = await Promise.all([
-      Clinic.count({ where: { created_at: { [Op.gte]: startDate } } }),
-      User.count({ where: { created_at: { [Op.gte]: startDate } } }),
-      Patient.count({ where: { created_at: { [Op.gte]: startDate } } }),
-      Visit.count({ where: { created_at: { [Op.gte]: startDate } } }),
-      Appointment.count({ where: { created_at: { [Op.gte]: startDate } } }),
+      Clinic.count({ where: { created_at: { [Op.between]: [startDate, endDate] } } }),
+      User.count({ where: { created_at: { [Op.between]: [startDate, endDate] } } }),
+      Patient.count({ where: { created_at: { [Op.between]: [startDate, endDate] } } }),
+      Visit.count({ where: { created_at: { [Op.between]: [startDate, endDate] } } }),
+      Appointment.count({ where: { created_at: { [Op.between]: [startDate, endDate] } } }),
     ]);
 
-    // Time-based analytics - daily data for the last 30 days
+    // Time-based analytics - daily data for selected period
     const dailyStats = await Visit.findAll({
       attributes: [
         [sequelize.fn('DATE', sequelize.col('created_at')), 'date'],
         [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
       ],
       where: {
-        created_at: { [Op.gte]: startDate },
+        created_at: { [Op.between]: [startDate, endDate] },
       },
       group: [sequelize.fn('DATE', sequelize.col('created_at'))],
       order: [[sequelize.fn('DATE', sequelize.col('created_at')), 'ASC']],
@@ -158,7 +170,10 @@ router.get('/', requireAdminAuth, async (req, res) => {
         newPatients,
         newVisits,
         newAppointments,
-        period: daysAgo,
+        period: start_date && end_date ? null : parseInt(period || '30'),
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
+        isCustomRange: !!(start_date && end_date),
       },
       analytics: {
         dailyStats,
@@ -357,6 +372,35 @@ router.get('/users/:id', requireAdminAuth, async (req, res) => {
     const visitCount = await Visit.count({ where: { doctorId: user.id } });
     const appointmentCount = await Appointment.count({ where: { doctorId: user.id } });
 
+    // Get login history (last 20 logins)
+    const loginHistory = await ActivityLog.findAll({
+      where: {
+        userId: user.id,
+        action: { [Op.in]: ['USER_LOGIN_SUCCESS', 'USER_LOGIN_FAILED'] },
+      },
+      order: [['created_at', 'DESC']],
+      limit: 20,
+      attributes: ['id', 'action', 'created_at', 'ipAddress', 'userAgent'],
+    });
+
+    // Get user activity summary
+    const activitySummary = await ActivityLog.findAll({
+      attributes: [
+        'action',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+      ],
+      where: {
+        userId: user.id,
+        created_at: {
+          [Op.gte]: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+        },
+      },
+      group: ['action'],
+      order: [[sequelize.fn('COUNT', sequelize.col('id')), 'DESC']],
+      limit: 10,
+      raw: true,
+    });
+
     res.render('admin/user-detail', {
       title: `User: ${user.name}`,
       layout: 'layouts/admin',
@@ -365,6 +409,8 @@ router.get('/users/:id', requireAdminAuth, async (req, res) => {
         visitCount,
         appointmentCount,
       },
+      loginHistory,
+      activitySummary,
     });
   } catch (error) {
     console.error('Admin user detail error:', error);
@@ -514,7 +560,7 @@ router.get('/users/:id/activity', requireAdminAuth, async (req, res) => {
  */
 router.get('/clinics', requireAdminAuth, async (req, res) => {
   try {
-    const { search, plan, status, page = 1, limit = 50 } = req.query;
+    const { search, plan, status, startDate, endDate, sortBy = 'created_at', page = 1, limit = 50 } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
     const where = {};
@@ -522,10 +568,28 @@ router.get('/clinics', requireAdminAuth, async (req, res) => {
       where[Op.or] = [
         { name: { [Op.iLike]: `%${search}%` } },
         { email: { [Op.iLike]: `%${search}%` } },
+        { phone: { [Op.iLike]: `%${search}%` } },
       ];
     }
     if (plan) where.plan = plan;
     if (status) where.subscriptionStatus = status;
+
+    // Date range filter
+    if (startDate || endDate) {
+      where.created_at = {};
+      if (startDate) where.created_at[Op.gte] = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        where.created_at[Op.lte] = end;
+      }
+    }
+
+    // Determine sort order
+    let order = [['created_at', 'DESC']];
+    if (sortBy === 'name') order = [['name', 'ASC']];
+    else if (sortBy === 'plan') order = [['plan', 'ASC'], ['created_at', 'DESC']];
+    else if (sortBy === 'created_at') order = [['created_at', 'DESC']];
 
     const { count, rows: clinics } = await Clinic.findAndCountAll({
       where,
@@ -539,7 +603,7 @@ router.get('/clinics', requireAdminAuth, async (req, res) => {
       ],
       limit: parseInt(limit),
       offset,
-      order: [['created_at', 'DESC']],
+      order,
     });
 
     // Get statistics for filters
@@ -571,7 +635,7 @@ router.get('/clinics', requireAdminAuth, async (req, res) => {
         total: count,
         pages: Math.ceil(count / parseInt(limit)),
       },
-      filters: { search, plan, status },
+      filters: { search, plan, status, startDate, endDate, sortBy },
       clinicsByPlan,
       clinicsByStatus,
     });
@@ -628,7 +692,16 @@ router.post('/clinics/:id/status', requireAdminAuth, async (req, res) => {
 router.get('/export/:type', requireAdminAuth, async (req, res) => {
   try {
     const { type } = req.params;
-    const { format = 'csv' } = req.query;
+    const { format = 'csv', start_date, end_date, ...filters } = req.query;
+
+    // Build date filter if provided
+    let dateFilter = {};
+    if (start_date && end_date) {
+      const startDate = new Date(start_date);
+      const endDate = new Date(end_date);
+      endDate.setHours(23, 59, 59, 999);
+      dateFilter = { [Op.between]: [startDate, endDate] };
+    }
 
     if (format === 'csv') {
       res.setHeader('Content-Type', 'text/csv');
@@ -639,37 +712,67 @@ router.get('/export/:type', requireAdminAuth, async (req, res) => {
 
       switch (type) {
         case 'clinics':
-          data = await Clinic.findAll({ raw: true });
-          headers = ['ID', 'Name', 'Email', 'Plan', 'Status', 'Created At'];
+          const clinicWhere = {};
+          if (filters.plan) clinicWhere.plan = filters.plan;
+          if (filters.status) clinicWhere.subscriptionStatus = filters.status;
+          if (filters.search) {
+            clinicWhere[Op.or] = [
+              { name: { [Op.iLike]: `%${filters.search}%` } },
+              { email: { [Op.iLike]: `%${filters.search}%` } },
+            ];
+          }
+          if (Object.keys(dateFilter).length > 0) clinicWhere.created_at = dateFilter;
+
+          data = await Clinic.findAll({
+            where: Object.keys(clinicWhere).length > 0 ? clinicWhere : undefined,
+            raw: true
+          });
+          headers = ['ID', 'Name', 'Email', 'Phone', 'Plan', 'Status', 'Created At', 'Updated At'];
           res.write(headers.join(',') + '\n');
           data.forEach(clinic => {
             res.write([
               clinic.id,
-              `"${clinic.name}"`,
-              clinic.email,
-              clinic.plan,
-              clinic.subscriptionStatus,
-              clinic.created_at,
+              `"${(clinic.name || '').replace(/"/g, '""')}"`,
+              clinic.email || '',
+              clinic.phone || '',
+              clinic.plan || '',
+              clinic.subscriptionStatus || '',
+              clinic.created_at || '',
+              clinic.updated_at || '',
             ].join(',') + '\n');
           });
           break;
 
         case 'users':
+          const userWhere = {};
+          if (filters.role) userWhere.role = filters.role;
+          if (filters.status) userWhere.status = filters.status;
+          if (filters.clinicId) userWhere.clinicId = filters.clinicId;
+          if (filters.search) {
+            userWhere[Op.or] = [
+              { name: { [Op.iLike]: `%${filters.search}%` } },
+              { email: { [Op.iLike]: `%${filters.search}%` } },
+            ];
+          }
+          if (Object.keys(dateFilter).length > 0) userWhere.created_at = dateFilter;
+
           data = await User.findAll({
-            include: [{ model: Clinic, as: 'clinic', attributes: ['name'] }],
+            where: Object.keys(userWhere).length > 0 ? userWhere : undefined,
+            include: [{ model: Clinic, as: 'clinic', attributes: ['name'], required: false }],
             raw: false,
           });
-          headers = ['ID', 'Name', 'Email', 'Role', 'Status', 'Clinic', 'Created At'];
+          headers = ['ID', 'Name', 'Email', 'Role', 'Status', 'Clinic', 'Created At', 'Last Login'];
           res.write(headers.join(',') + '\n');
           for (const user of data) {
             res.write([
               user.id,
-              `"${user.name}"`,
-              user.email,
-              user.role,
-              user.status,
-              user.clinic ? `"${user.clinic.name}"` : '',
-              user.created_at,
+              `"${(user.name || '').replace(/"/g, '""')}"`,
+              user.email || '',
+              user.role || '',
+              user.status || '',
+              user.clinic ? `"${user.clinic.name.replace(/"/g, '""')}"` : '',
+              user.created_at || '',
+              user.lastLogin || '',
             ].join(',') + '\n');
           }
           break;
@@ -692,27 +795,82 @@ router.get('/export/:type', requireAdminAuth, async (req, res) => {
           break;
 
         case 'activity-logs':
+          const logWhere = {};
+          if (filters.action) logWhere.action = filters.action;
+          if (filters.entityType) logWhere.entityType = filters.entityType;
+          if (filters.userId) logWhere.userId = filters.userId;
+          if (filters.clinicId) logWhere.clinicId = filters.clinicId;
+          if (filters.adminId) logWhere.adminId = filters.adminId;
+          if (filters.search) {
+            logWhere[Op.or] = [
+              { action: { [Op.iLike]: `%${filters.search}%` } },
+              { description: { [Op.iLike]: `%${filters.search}%` } },
+            ];
+          }
+          if (Object.keys(dateFilter).length > 0) {
+            logWhere.created_at = dateFilter;
+          } else if (filters.startDate || filters.endDate) {
+            logWhere.created_at = {};
+            if (filters.startDate) logWhere.created_at[Op.gte] = new Date(filters.startDate);
+            if (filters.endDate) {
+              const endDate = new Date(filters.endDate);
+              endDate.setHours(23, 59, 59, 999);
+              logWhere.created_at[Op.lte] = endDate;
+            }
+          }
+
           data = await ActivityLog.findAll({
+            where: Object.keys(logWhere).length > 0 ? logWhere : undefined,
             include: [
               { model: User, as: 'user', attributes: ['name', 'email'], required: false },
               { model: Clinic, as: 'clinic', attributes: ['name'], required: false },
             ],
             order: [['created_at', 'DESC']],
-            limit: 10000, // Limit to prevent huge exports
+            limit: 50000, // Increased limit
           });
           headers = ['ID', 'Timestamp', 'Action', 'Entity Type', 'Entity ID', 'Description', 'User', 'Clinic', 'IP Address'];
           res.write(headers.join(',') + '\n');
           data.forEach(log => {
             res.write([
               log.id,
-              log.created_at,
-              log.action,
+              log.created_at || '',
+              log.action || '',
               log.entityType || '',
               log.entityId || '',
               `"${(log.description || '').replace(/"/g, '""')}"`,
               log.user ? `"${log.user.name} (${log.user.email})"` : '',
-              log.clinic ? `"${log.clinic.name}"` : '',
+              log.clinic ? `"${log.clinic.name.replace(/"/g, '""')}"` : '',
               log.ipAddress || '',
+            ].join(',') + '\n');
+          });
+          break;
+
+        case 'statistics':
+          // Export dashboard statistics
+          const stats = {
+            totalClinics: await Clinic.count(),
+            activeClinics: await Clinic.count({ where: { subscriptionStatus: 'ACTIVE' } }),
+            totalUsers: await User.count(),
+            totalPatients: await Patient.count(),
+            totalVisits: await Visit.count(),
+            totalAppointments: await Appointment.count(),
+          };
+
+          if (Object.keys(dateFilter).length > 0) {
+            stats.newClinics = await Clinic.count({ where: { created_at: dateFilter } });
+            stats.newUsers = await User.count({ where: { created_at: dateFilter } });
+            stats.newPatients = await Patient.count({ where: { created_at: dateFilter } });
+            stats.newVisits = await Visit.count({ where: { created_at: dateFilter } });
+            stats.newAppointments = await Appointment.count({ where: { created_at: dateFilter } });
+          }
+
+          headers = ['Metric', 'Value', 'Period'];
+          res.write(headers.join(',') + '\n');
+          Object.entries(stats).forEach(([key, value]) => {
+            res.write([
+              `"${key.replace(/([A-Z])/g, ' $1').trim()}"`,
+              value,
+              Object.keys(dateFilter).length > 0 ? `${start_date} to ${end_date}` : 'All Time',
             ].join(',') + '\n');
           });
           break;
@@ -832,10 +990,16 @@ router.get('/analytics', requireAdminAuth, async (req, res) => {
       clinicsLastYear,
       usersThisMonth,
       usersLastMonth,
+      usersThisYear,
+      usersLastYear,
       patientsThisMonth,
       patientsLastMonth,
+      patientsThisYear,
+      patientsLastYear,
       visitsThisMonth,
       visitsLastMonth,
+      visitsThisYear,
+      visitsLastYear,
     ] = await Promise.all([
       Clinic.count({ where: { created_at: { [Op.gte]: thisMonth } } }),
       Clinic.count({ where: { created_at: { [Op.gte]: lastMonth, [Op.lt]: thisMonth } } }),
@@ -843,25 +1007,50 @@ router.get('/analytics', requireAdminAuth, async (req, res) => {
       Clinic.count({ where: { created_at: { [Op.gte]: lastYear, [Op.lt]: thisYear } } }),
       User.count({ where: { created_at: { [Op.gte]: thisMonth } } }),
       User.count({ where: { created_at: { [Op.gte]: lastMonth, [Op.lt]: thisMonth } } }),
+      User.count({ where: { created_at: { [Op.gte]: thisYear } } }),
+      User.count({ where: { created_at: { [Op.gte]: lastYear, [Op.lt]: thisYear } } }),
       Patient.count({ where: { created_at: { [Op.gte]: thisMonth } } }),
       Patient.count({ where: { created_at: { [Op.gte]: lastMonth, [Op.lt]: thisMonth } } }),
+      Patient.count({ where: { created_at: { [Op.gte]: thisYear } } }),
+      Patient.count({ where: { created_at: { [Op.gte]: lastYear, [Op.lt]: thisYear } } }),
       Visit.count({ where: { created_at: { [Op.gte]: thisMonth } } }),
       Visit.count({ where: { created_at: { [Op.gte]: lastMonth, [Op.lt]: thisMonth } } }),
+      Visit.count({ where: { created_at: { [Op.gte]: thisYear } } }),
+      Visit.count({ where: { created_at: { [Op.gte]: lastYear, [Op.lt]: thisYear } } }),
     ]);
 
     const comparisons = {
       clinics: {
+        thisMonth: clinicsThisMonth,
+        lastMonth: clinicsLastMonth,
+        thisYear: clinicsThisYear,
+        lastYear: clinicsLastYear,
         monthOverMonth: clinicsLastMonth > 0 ? ((clinicsThisMonth - clinicsLastMonth) / clinicsLastMonth * 100).toFixed(1) : '0',
         yearOverYear: clinicsLastYear > 0 ? ((clinicsThisYear - clinicsLastYear) / clinicsLastYear * 100).toFixed(1) : '0',
       },
       users: {
+        thisMonth: usersThisMonth,
+        lastMonth: usersLastMonth,
+        thisYear: usersThisYear,
+        lastYear: usersLastYear,
         monthOverMonth: usersLastMonth > 0 ? ((usersThisMonth - usersLastMonth) / usersLastMonth * 100).toFixed(1) : '0',
+        yearOverYear: usersLastYear > 0 ? ((usersThisYear - usersLastYear) / usersLastYear * 100).toFixed(1) : '0',
       },
       patients: {
+        thisMonth: patientsThisMonth,
+        lastMonth: patientsLastMonth,
+        thisYear: patientsThisYear,
+        lastYear: patientsLastYear,
         monthOverMonth: patientsLastMonth > 0 ? ((patientsThisMonth - patientsLastMonth) / patientsLastMonth * 100).toFixed(1) : '0',
+        yearOverYear: patientsLastYear > 0 ? ((patientsThisYear - patientsLastYear) / patientsLastYear * 100).toFixed(1) : '0',
       },
       visits: {
+        thisMonth: visitsThisMonth,
+        lastMonth: visitsLastMonth,
+        thisYear: visitsThisYear,
+        lastYear: visitsLastYear,
         monthOverMonth: visitsLastMonth > 0 ? ((visitsThisMonth - visitsLastMonth) / visitsLastMonth * 100).toFixed(1) : '0',
+        yearOverYear: visitsLastYear > 0 ? ((visitsThisYear - visitsLastYear) / visitsLastYear * 100).toFixed(1) : '0',
       },
     };
 
@@ -951,6 +1140,19 @@ router.get('/activity-logs', requireAdminAuth, async (req, res) => {
       raw: true,
     });
 
+    // Get users and clinics for filter dropdowns
+    const users = await User.findAll({
+      attributes: ['id', 'name', 'email'],
+      limit: 100,
+      order: [['name', 'ASC']],
+    });
+
+    const clinics = await Clinic.findAll({
+      attributes: ['id', 'name'],
+      limit: 100,
+      order: [['name', 'ASC']],
+    });
+
     res.render('admin/activity-logs', {
       title: 'Activity Logs',
       layout: 'layouts/admin',
@@ -964,6 +1166,8 @@ router.get('/activity-logs', requireAdminAuth, async (req, res) => {
       filters: { search, action, entityType, userId, adminId, clinicId, startDate, endDate },
       actions: actions.map(a => a.action).filter(Boolean),
       entityTypes: entityTypes.map(e => e.entityType).filter(Boolean),
+      users,
+      clinics,
     });
   } catch (error) {
     console.error('Activity logs error:', error);

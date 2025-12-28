@@ -102,6 +102,32 @@
         </div>
     </div>
 
+    <!-- Bulk Actions -->
+    <div id="bulk-actions" class="card mb-4 hidden">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-700">
+                    <span id="selected-count">0</span> user(s) selected
+                </span>
+                <form id="bulk-status-form" class="flex items-center gap-2">
+                    <input type="hidden" id="bulk-user-ids" name="userIds" value="">
+                    <select name="status" required class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Select Status</option>
+                        <option value="ACTIVE">Activate</option>
+                        <option value="INACTIVE">Deactivate</option>
+                        <option value="SUSPENDED">Suspend</option>
+                    </select>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        Update Status
+                    </button>
+                    <button type="button" onclick="clearSelection()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                        Clear Selection
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Users Table -->
     <div class="card">
         <div class="flex items-center justify-between mb-6">
@@ -125,6 +151,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clinic</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
@@ -156,8 +183,23 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     <%= new Date(user.created_at).toLocaleDateString() %>
                                 </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <%= user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never' %>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <a href="/admin/users/<%= user.id %>" class="btn btn-sm">View</a>
+                                    <div class="flex items-center gap-2">
+                                        <a href="/admin/users/<%= user.id %>" class="btn btn-sm">View</a>
+                                        <div class="relative">
+                                            <select onchange="updateUserStatus('<%= user.id %>', this.value, this)"
+                                                    class="text-xs px-2 py-1 border border-gray-300 rounded"
+                                                    data-original-value="<%= user.status %>"
+                                                    value="<%= user.status %>">
+                                                <option value="ACTIVE" <%= user.status === 'ACTIVE' ? 'selected' : '' %>>Active</option>
+                                                <option value="INACTIVE" <%= user.status === 'INACTIVE' ? 'selected' : '' %>>Inactive</option>
+                                                <option value="SUSPENDED" <%= user.status === 'SUSPENDED' ? 'selected' : '' %>>Suspend</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                         <% }); %>
@@ -261,5 +303,45 @@
             });
         }
     });
+
+    // Update individual user status
+    function updateUserStatus(userId, status, selectElement) {
+        if (!confirm(`Are you sure you want to change this user's status to ${status}?`)) {
+            // Reset select to original value
+            if (selectElement) {
+                const originalValue = selectElement.getAttribute('data-original-value');
+                if (originalValue) selectElement.value = originalValue;
+            }
+            return;
+        }
+
+        fetch(`/admin/users/${userId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status }),
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                return response.json();
+            }
+        })
+        .then(data => {
+            if (data && data.error) {
+                alert('Error: ' + data.error);
+                window.location.reload();
+            } else {
+                window.location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating user status');
+            window.location.reload();
+        });
+    }
 </script>
 
