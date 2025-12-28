@@ -1,5 +1,41 @@
 /* Admin Dashboard Dark Mode & Enhanced Styles */
 
+/* Hide scrollbars but keep functionality */
+html {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Hide scrollbar for webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Hide scrollbar for Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 transparent;
+}
+
 /* Dark Mode Variables */
 :root {
   --admin-bg: #f9fafb;
@@ -11,7 +47,7 @@
   --admin-navbar-bg: #ffffff;
 }
 
-[data-theme="dark"] {
+[data-theme='dark'] {
   --admin-bg: #111827;
   --admin-card-bg: #1f2937;
   --admin-text: #f9fafb;
@@ -22,41 +58,41 @@
 }
 
 /* Dark Mode Base Styles */
-[data-theme="dark"] body {
+[data-theme='dark'] body {
   background-color: var(--admin-bg);
   color: var(--admin-text);
 }
 
-[data-theme="dark"] .card,
-[data-theme="dark"] .stat-card {
+[data-theme='dark'] .card,
+[data-theme='dark'] .stat-card {
   background-color: var(--admin-card-bg);
   border-color: var(--admin-border);
   color: var(--admin-text);
 }
 
-[data-theme="dark"] .bg-white {
+[data-theme='dark'] .bg-white {
   background-color: var(--admin-card-bg) !important;
 }
 
-[data-theme="dark"] .text-gray-900 {
+[data-theme='dark'] .text-gray-900 {
   color: var(--admin-text) !important;
 }
 
-[data-theme="dark"] .text-gray-600,
-[data-theme="dark"] .text-gray-700 {
+[data-theme='dark'] .text-gray-600,
+[data-theme='dark'] .text-gray-700 {
   color: var(--admin-text-secondary) !important;
 }
 
-[data-theme="dark"] .border-gray-200,
-[data-theme="dark"] .border-gray-300 {
+[data-theme='dark'] .border-gray-200,
+[data-theme='dark'] .border-gray-300 {
   border-color: var(--admin-border) !important;
 }
 
-[data-theme="dark"] .bg-gray-50 {
+[data-theme='dark'] .bg-gray-50 {
   background-color: #374151 !important;
 }
 
-[data-theme="dark"] .bg-gray-100 {
+[data-theme='dark'] .bg-gray-100 {
   background-color: #4b5563 !important;
 }
 
@@ -66,12 +102,13 @@
   background-color: #e5e7eb;
 }
 
-[data-theme="dark"] .skeleton {
+[data-theme='dark'] .skeleton {
   background-color: #374151;
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -126,7 +163,7 @@
 }
 
 .tooltip .tooltiptext::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 100%;
   left: 50%;
@@ -136,11 +173,11 @@
   border-color: #1f2937 transparent transparent transparent;
 }
 
-[data-theme="dark"] .tooltip .tooltiptext {
+[data-theme='dark'] .tooltip .tooltiptext {
   background-color: #374151;
 }
 
-[data-theme="dark"] .tooltip .tooltiptext::after {
+[data-theme='dark'] .tooltip .tooltiptext::after {
   border-color: #374151 transparent transparent transparent;
 }
 
@@ -157,7 +194,8 @@
   height: 56px;
   border-radius: 50%;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   border: none;
   cursor: pointer;
   display: flex;
@@ -170,7 +208,8 @@
 
 .quick-actions-btn:hover {
   transform: scale(1.1);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .quick-actions-menu {
@@ -179,7 +218,8 @@
   right: 0;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
   padding: 0.5rem;
   min-width: 200px;
   display: none;
@@ -187,7 +227,7 @@
   gap: 0.25rem;
 }
 
-[data-theme="dark"] .quick-actions-menu {
+[data-theme='dark'] .quick-actions-menu {
   background: var(--admin-card-bg);
   border: 1px solid var(--admin-border);
 }
@@ -212,7 +252,7 @@
   background-color: #f3f4f6;
 }
 
-[data-theme="dark"] .quick-action-item:hover {
+[data-theme='dark'] .quick-action-item:hover {
   background-color: #374151;
 }
 
@@ -235,7 +275,7 @@
   font-family: monospace;
 }
 
-[data-theme="dark"] .key {
+[data-theme='dark'] .key {
   background: #374151;
   border-color: #4b5563;
   color: #d1d5db;
@@ -287,8 +327,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Help Documentation Panel */
@@ -305,7 +349,7 @@
   overflow-y: auto;
 }
 
-[data-theme="dark"] .help-panel {
+[data-theme='dark'] .help-panel {
   background: var(--admin-card-bg);
   border-left: 1px solid var(--admin-border);
 }
@@ -336,11 +380,13 @@
 
 .card-hover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-[data-theme="dark"] .card-hover:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+[data-theme='dark'] .card-hover:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3),
+    0 4px 6px -2px rgba(0, 0, 0, 0.2);
 }
 
 /* Sidebar Collapsed State */
@@ -377,3 +423,59 @@
   justify-content: center;
 }
 
+/* Prevent horizontal overflow */
+#main-content {
+  max-width: 100%;
+  width: 100%;
+}
+
+#main-content main {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Ensure cards and tables don't cause overflow */
+.card {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.card table {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Fix for admin pages */
+body > div {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Ensure all admin content containers don't overflow */
+.admin-container,
+#main-content > * {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Fix tables to be responsive */
+.overflow-x-auto {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+  height: 6px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+/* Prevent body from having horizontal scroll */
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
