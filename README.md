@@ -1,44 +1,59 @@
-# 🏥 MediTrack - Clinic Management SaaS
+# 🏥 MediTrack AI
 
-**Node.js + Express + EJS (Server-Side Rendering)**
+**AI-powered clinic operations platform for modern healthcare practices.**
 
-A multi-tenant SaaS application for small clinics to manage **patients, doctors, medical visit history, prescriptions, and follow-ups**.
+MediTrack AI helps clinics automate appointments, patient workflows, prescriptions, follow-ups, and operational coordination through workflow automation and AI-ready infrastructure.
 
-> **One clinic = one account, multiple doctors & staff**
-
----
-
-## 🚀 Quick Start
-
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. Build CSS
-npm run build:css
-
-# 3. Setup database (update .env first)
-npm run db:migrate
-
-# 4. Seed database (optional)
-npm run seed
-
-# 5. Start server
-npm run dev
-```
+Built for small and mid-sized clinics that still rely heavily on phone calls, WhatsApp, paper records, and manual administrative work.
 
 ---
 
-## 🎯 Key Features
+## 🚀 Why MediTrack AI
 
-- **Clinic & User Management** - One clinic per account, multiple doctors and staff
-- **Patient Management** - Central database with search and full history
-- **Visit History** - Multiple visits per patient with doctor tracking
-- **Digital Prescriptions** - Create, print, and share prescriptions
-- **Follow-up Reminders** - Automatic SMS/WhatsApp reminders
-- **Role-Based Access** - CLINIC_ADMIN, DOCTOR, STAFF roles
+Most clinics lose time and revenue due to:
 
-See [ROLES.md](./ROLES.md) for role permissions.
+- Missed appointments
+- Manual follow-ups
+- Overloaded reception staff
+- Fragmented patient communication
+- Paper-based workflows
+- Inconsistent medical documentation
+
+MediTrack AI is designed to reduce operational overhead so clinics can focus more on patient care.
+
+---
+
+## ✨ Core Features
+
+### 👥 Multi-Clinic & Role-Based Access
+Each clinic operates in a secure, isolated workspace.
+- **Multi-user Clinic Management:** Support for CLINIC_ADMIN, DOCTOR, and STAFF roles.
+- **Tenant-Scoped Data Isolation:** Multi-tenant architecture ensuring data privacy.
+- **Role-Based Access Control (RBAC):** Restrict features and views based on roles.
+- **Doctor-Specific Workflows:** Custom dashboards and scheduling for clinic practitioners.
+- **Clinic-Wide Operational Visibility:** Overview stats for admins and staff.
+
+### 🧾 Patient & Consultation Management
+- **Centralized Patient Records:** Complete database with search, demographics, and clinical history.
+- **Visit History:** Log and track patient visits chronologically.
+- **Consultation Tracking:** Record medical notes, vitals, and diagnoses.
+- **Prescription Management:** Create, view, print, and share digital prescriptions.
+- **Structured Patient Timeline:** Chronological view of all touchpoints.
+
+### 📅 Appointment & Follow-Up Automation
+- **Appointment Scheduling:** Interactive booking and doctor availability management.
+- **Automated Reminders:** Patient notification alerts to prevent no-shows.
+- **Follow-up Tracking:** Scheduled tasks for future visits and continuity of care.
+- **SMS / WhatsApp Workflows:** Built-in hooks for notification pathways.
+- **Missed Appointment Recovery:** Workflows to re-engage patients.
+
+### 🧠 AI-Ready Workflow Architecture
+MediTrack AI is architected from the ground up to support modern AI integrations:
+- **AI Appointment Assistant:** Automated scheduling over text.
+- **Voice-to-Prescription:** Auto-transcribe consultations into digital prescriptions.
+- **AI Consultation Summaries:** Generate structured summaries from doctor notes.
+- **AI Receptionist Workflows:** Direct patient inquiries automated using NLP.
+- **Smart Follow-up Recommendations:** Predictive follow-ups based on patient history.
 
 ---
 
@@ -46,9 +61,10 @@ See [ROLES.md](./ROLES.md) for role permissions.
 
 - **Backend:** Node.js, Express.js
 - **Frontend:** EJS (Server-Side Rendering), Tailwind CSS
-- **Database:** PostgreSQL with Sequelize ORM
-- **Authentication:** Session-based with bcrypt
-- **Jobs:** node-cron for scheduled tasks
+- **Database:** PostgreSQL (with Neon Serverless PostgreSQL support) & Sequelize ORM
+- **Authentication & Security:** Session-based auth, bcrypt password hashing, and tenant-scoped data isolation
+- **Jobs & Workflows:** node-cron for scheduled tasks / EventBridge hooks
+- **Infrastructure (Cloud/Serverless ready):** AWS Lambda (compute), API Gateway (routing), Amazon S3 (document storage), and AWS EventBridge (workflows)
 
 ---
 
@@ -57,114 +73,121 @@ See [ROLES.md](./ROLES.md) for role permissions.
 ```
 src/
 ├── app.js              # Main application entry
-├── config/             # Configuration files
-├── routes/             # Express routes
-├── middlewares/        # Auth, validation middleware
-├── views/              # EJS templates
-├── public/             # Static assets (CSS, JS)
-├── jobs/               # Scheduled jobs
-└── utils/              # Helper functions
+├── config/             # Configuration files (database, session, email)
+├── jobs/               # Scheduled background jobs
+├── middlewares/        # Authentication and authorization middleware
+├── migrations/         # Database migration files
+├── models/             # Sequelize database models
+├── public/             # Static assets (CSS, JS, images)
+├── routes/             # Express routes (auth, patients, visits, etc.)
+├── utils/              # Helper functions, roles utility, and seed data
+└── views/              # EJS templates and layout files
 ```
+
+---
+
+## ⚡ Local Development Setup
+
+### Prerequisites
+- Node.js 20+
+- PostgreSQL database (local or cloud-hosted like Neon)
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/theshubhamy/MediTrack.git
+cd MediTrack
+```
+
+### 2. Install Dependencies
+```bash
+npm install
+```
+
+### 3. Configure Environment Variables
+Create a `.env` file in the root directory (you can copy `.env.example` as a starting point):
+```env
+PORT=3301
+DATABASE_URL=postgresql://username:password@localhost:5432/meditrack
+SESSION_SECRET=your-secure-session-secret-key
+```
+
+### 4. Run Database Migrations
+Create the database tables:
+```bash
+npm run db:migrate
+```
+
+### 5. Seed Development Database
+Populate the database with default roles, credentials, and dummy data:
+```bash
+npm run seed
+```
+
+### 6. Build Tailwind CSS
+Build/compile the public CSS assets:
+```bash
+npm run build:css
+```
+
+### 7. Start Development Server
+Start the application in development mode with nodemon:
+```bash
+npm run dev
+```
+The application will be running at `http://localhost:3301`.
 
 ---
 
 ## 🔐 Default Credentials
 
-After seeding the database:
+After running the seed script (`npm run seed`), you can test the application using the following accounts:
 
 - **CLINIC_ADMIN:** `admin@clinic.com` / `admin123`
 - **DOCTOR:** `doctor@clinic.com` / `admin123`
 - **STAFF:** `staff@clinic.com` / `admin123`
 
-⚠️ **Change these in production!**
+⚠️ *Please ensure all default credentials are changed before deploying the application to production!*
 
 ---
 
-# 🔐 Role-Based Access Control
+## 🔐 Role-Based Access Control
 
-This document explains the role-based login and access control system in MediTrack.
+This system supports role-based access control (RBAC) to ensure multi-tenant security and functional alignment.
 
-## Roles Overview
+### Roles Overview
 
-The system supports four user roles with different permissions:
+#### 1. CLINIC_ADMIN 👑
+*Full access to all clinic features.*
+- ✅ View all patients, visits, and doctors.
+- ✅ Create and manage patient profiles.
+- ✅ Create and manage visits.
+- ✅ Invite and manage doctor and staff accounts.
+- ✅ Access clinic settings, billing, and operational analytics.
+- **Navigation Access:** Dashboard, Patients, Doctors, Settings.
 
-### 1. CLINIC_ADMIN 👑
+#### 2. DOCTOR 👨‍⚕️
+*Access to clinical care and consultation workflows.*
+- ✅ View all patients.
+- ✅ Create and manage visits assigned to them (cannot view other doctors' visits).
+- ✅ Manage their own profile (name, phone, notifications, etc.).
+- ✅ Change their own password.
+- ❌ Cannot manage clinic doctors/staff or access settings/billing.
+- **Navigation Access:** Dashboard (shows only their visits), Patients, Doctors (view-only).
 
-**Full access to all clinic features**
-
-- ✅ View all patients, visits, and doctors
-- ✅ Create and manage patients
-- ✅ Create and manage visits
-- ✅ Invite and manage doctors
-- ✅ Access clinic settings and billing
-- ✅ View all statistics and reports
-
-**Navigation Access:**
-
-- Dashboard
-- Patients
-- Doctors
-- Settings
-
----
-
-### 2. DOCTOR 👨‍⚕️
-
-**Access to patient care features**
-
-- ✅ View all patients
-- ✅ Create and manage visits (assigned to them)
-- ✅ View only their own visits
-- ✅ Manage own profile (name, phone, preferences, notifications)
-- ✅ Change own password
-- ❌ Cannot manage doctors
-- ❌ Cannot access settings/billing
-- ❌ Cannot invite other doctors
-
-**Navigation Access:**
-
-- Dashboard (shows only their visits)
-- Patients
-- Doctors (view only)
-
-**Dashboard Data:**
-
-- Total patients (all clinic patients)
-- My visits (only visits assigned to this doctor)
-- Recent visits (only their visits)
+#### 3. STAFF 👤
+*Access to administrative and scheduling features.*
+- ✅ View all patients, visits, and appointments.
+- ✅ Create and manage patient profiles.
+- ✅ Create and manage appointments.
+- ✅ View all clinic doctors.
+- ✅ View all statistics and reports.
+- ❌ Cannot document medical records (create/edit visits and prescriptions).
+- ❌ Cannot manage clinic accounts or access billing/settings.
+- **Navigation Access:** Dashboard, Patients, Appointments, Doctors (view-only).
 
 ---
 
-### 3. STAFF 👤
-
-**Access to administrative and scheduling features**
-
-- ✅ View all patients, visits, and appointments
-- ✅ Create and manage patients
-- ✅ Create and manage appointments
-- ✅ View all doctors
-- ✅ View all statistics and reports
-- ❌ Cannot create visits (medical documentation)
-- ❌ Cannot create prescriptions
-- ❌ Cannot manage doctors
-- ❌ Cannot access settings/billing
-
-**Navigation Access:**
-
-- Dashboard
-- Patients
-- Appointments
-- Doctors (view only)
-
-**Dashboard Data:**
-
-- All clinic statistics
-- All recent visits
-- All appointments
-
----
-
-## Role Permissions Summary
+### Role Permissions Summary
 
 | Action                      | CLINIC_ADMIN | DOCTOR            | STAFF        |
 | --------------------------- | ------------ | ----------------- | ------------ |
@@ -201,134 +224,100 @@ The system supports four user roles with different permissions:
 | Change Password             | ✅ Yes       | ✅ Yes            | ✅ Yes       |
 | Manage Notifications        | ✅ Yes       | ✅ Yes            | ✅ Yes       |
 
-### Notes:
+### Implementation Details
 
-- **DOCTOR**: Can only view/edit their own visits, prescriptions, and appointments
-- **STAFF**: Can view all data but cannot create medical records (visits/prescriptions)
-- **CLINIC_ADMIN**: Full access to all features and settings
+#### Role Helper Functions
+Located in `./src/utils/roles.js`:
+- `getRoleRedirect(role)`: Get redirect URL after login.
+- `hasRole(user, role)`: Check if user has specific role.
+- `hasAnyRole(user, ...roles)`: Check if user has any of the roles.
+- `canWrite(user)`: Check if user can perform write operations.
+- `canManageClinic(user)`: Check if user can manage clinic settings.
+- `canManageDoctors(user)`: Check if user can manage doctors.
+- `canCreateVisits(user)`: Check if user can create visits.
+- `canViewAllData(user)`: Check if user can view all clinic data.
 
----
+#### Middleware
+Located in `./src/middlewares/auth.js`:
+- `requireAuth`: Ensures user is logged in.
+- `requireRole(...roles)`: Ensures user has required role(s).
+- `requireClinicAccess`: Ensures user has clinic access.
 
-## Role-Based Features
-
-### Login Redirect
-
-All roles are redirected to `/dashboard` after login, but see different data based on their role.
-
-### Dashboard Filtering
-
-- **CLINIC_ADMIN & STAFF**: See all clinic data
-- **DOCTOR**: See only their own visits
-
-### Route Protection
-
-Routes are protected using middleware:
-
-- `requireAuth`: User must be logged in
-- `requireClinicAccess`: User must belong to a clinic
-- `requireRole(...roles)`: User must have one of the specified roles
-
-### View-Level Access Control
-
-UI elements are conditionally rendered based on role:
-
-- Navigation items hidden based on permissions
-- Role badge displayed in navigation
+#### View Helpers
+Role helper functions are available in all EJS templates via `res.locals` (e.g., `canWrite()`, `canManageClinic()`, `canManageDoctors()`, `canCreateVisits()`, `canViewAllData()`, `hasRole(role)`, `hasAnyRole(...roles)`).
 
 ---
 
-## Testing Roles
+## 🛡️ Security
 
-After running the seed script (`npm run seed`), you can test with these accounts:
+MediTrack AI follows a tenant-isolated architecture ensuring high security standards:
+- **Clinic-Scoped Queries:** All database queries are scoped by `clinicId` to prevent cross-tenant data leakage.
+- **Route Protection Middleware:** Access controls are strictly enforced at the routing level.
+- **Password Hashing:** Passwords securely hashed with `bcrypt`.
+- **Role-Based Authorization:** View-level checks paired with robust API authorization.
+- **Secure Session Handling:** Express sessions with customizable secrets.
 
-```
-CLINIC_ADMIN: admin@clinic.com / admin123
-DOCTOR:       doctor@clinic.com / admin123
-STAFF:        staff@clinic.com / admin123
-```
-
----
-
-## Implementation Details
-
-### Role Helper Functions
-
-Located in `src/utils/roles.js`:
-
-- `getRoleRedirect(role)`: Get redirect URL after login
-- `hasRole(user, role)`: Check if user has specific role
-- `hasAnyRole(user, ...roles)`: Check if user has any of the roles
-- `canWrite(user)`: Check if user can perform write operations
-- `canManageClinic(user)`: Check if user can manage clinic settings
-- `canManageDoctors(user)`: Check if user can manage doctors
-- `canCreateVisits(user)`: Check if user can create visits
-- `canViewAllData(user)`: Check if user can view all clinic data
-
-### Middleware
-
-Located in `src/middlewares/auth.js`:
-
-- `requireAuth`: Ensures user is logged in
-- `requireRole(...roles)`: Ensures user has required role(s)
-- `requireClinicAccess`: Ensures user has clinic access
-
-### View Helpers
-
-Role helper functions are available in all EJS templates via `res.locals`:
-
-- `canWrite()`
-- `canManageClinic()`
-- `canManageDoctors()`
-- `canCreateVisits()`
-- `canViewAllData()`
-- `hasRole(role)`
-- `hasAnyRole(...roles)`
+*Recommended Production Practices:*
+- HTTPS enforcement for secure transit.
+- Encrypted backups & secure database access control.
+- Centralized secrets management and audit logging.
 
 ---
 
-## Security Notes
+## ☁️ Infrastructure
 
-1. **Multi-Tenant Isolation**: All queries are scoped by `clinicId` to prevent data leakage
-2. **Role-Based Filtering**: Data is filtered at the database level based on role
-3. **Route Protection**: Routes are protected at the middleware level
-4. **View Protection**: UI elements are conditionally rendered, but backend validation is primary
-
----
-
-## Adding New Roles
-
-To add a new role:
-
-1. Add role to `UserRole` enum in `src/models/User.js`
-2. Add role constant to `src/utils/roles.js`
-3. Update helper functions in `src/utils/roles.js`
-4. Add role checks to routes in `src/routes/`
-5. Update views to handle new role
-6. Run Sequelize migration: `npm run db:migrate`
+MediTrack AI is architected for modern serverless scaling:
+- **AWS Lambda:** Scalable, compute-on-demand for the Express backend.
+- **API Gateway:** Entry point for HTTP routing and CORS policy management.
+- **Neon:** Serverless PostgreSQL providing scalable database operations.
+- **Amazon S3:** Document storage for digital prescriptions and clinic files.
+- **AWS EventBridge:** Automated, event-driven scheduling for patient notifications/follow-up cron jobs.
 
 ---
 
 ## 🛠️ Available Scripts
 
-```bash
-npm start              # Start production server
-npm run dev            # Start development server
-npm run build:css      # Build Tailwind CSS
-npm run db:migrate      # Run database migrations
-npm run db:migrate:undo # Rollback last migration
-npm run seed           # Seed database with test data
-npm run setup          # Quick setup (install + build + generate)
-```
+Run these scripts from the project root:
+- `npm start`: Start production server.
+- `npm run dev`: Start development server (using Nodemon).
+- `npm run build:css`: Build and watch Tailwind CSS.
+- `npm run db:migrate`: Run database migrations.
+- `npm run db:migrate:undo`: Rollback the last migration.
+- `npm run seed`: Seed the database with default clinic data.
+- `npm run setup`: Quick setup (installs dependencies and compiles CSS).
+- `npm run setup:full`: Complete setup (installs, compiles CSS, migrates, and seeds).
 
 ---
 
-## 🔒 Security
+## 🧭 Product Roadmap
 
-- Password hashing with bcrypt
-- Session-based authentication
-- Multi-tenant data isolation
-- Input validation
-- Role-based access control
+### Phase 1: Core Operations
+- Patient onboarding and record management.
+- Basic appointment scheduling workflows.
+- Visit logs and digital prescriptions.
+- Basic clinic statistics.
+
+### Phase 2: Engagement Automation
+- WhatsApp & SMS notifications.
+- Automated appointment reminders.
+- Dynamic patient engagement workflows.
+
+### Phase 3: AI Copilot
+- AI-based appointment assistant.
+- Voice-to-prescription transcription.
+- AI-generated consultation summaries.
+
+### Phase 4: Clinic Intelligence
+- AI receptionist bot.
+- Deep operational analytics.
+- Insurance workflow automation.
+- Multi-clinic intelligence platform.
+
+---
+
+## 🌍 Vision
+
+Our vision is to build the foundational operational infrastructure layer for modern healthcare practices. By automating administrative overhead and embedding AI-ready capabilities directly into daily workflows, MediTrack AI helps clinics spend less time managing paperwork and more time delivering high-quality patient care.
 
 ---
 
