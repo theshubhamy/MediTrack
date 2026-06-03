@@ -18,6 +18,11 @@ function parseDatabaseUrl() {
 const baseConfig = {
   ...parseDatabaseUrl(),
   dialect: 'postgres',
+  dialectOptions: {
+    ssl: {
+      require: true,
+    },
+  },
 };
 
 module.exports = {

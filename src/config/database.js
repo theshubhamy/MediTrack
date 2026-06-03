@@ -15,7 +15,9 @@ function createSequelize() {
       dialect: 'postgres',
       logging: process.env.NODE_ENV === 'development' ? console.log : false,
       dialectOptions: {
-        ssl: false,
+        ssl: {
+          require: true,
+        },
       },
       pool: {
         max: 5,
