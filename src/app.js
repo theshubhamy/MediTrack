@@ -123,10 +123,24 @@ if (process.env.NODE_ENV !== 'test') {
   startReminderJob();
 }
 
-// Start server
-app.listen(PORT, () => {
+// Start Express server
+const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
+// Graceful shutdown
+process.on("SIGINT", () => {
+  server.close(() => {
+    console.log("Server closed");
+    process.exit(0);
+  });
+});
+
+process.on("SIGTERM", () => {
+  server.close(() => {
+    console.log("Server closed");
+    process.exit(0);
+  });
+});
 module.exports = app;
