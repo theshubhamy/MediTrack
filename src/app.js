@@ -34,25 +34,6 @@ const sessionConfig = {
   },
 };
 
-// Initialize Redis for session storage (if available)
-const { initRedis } = require('./config/redis');
-
-// Initialize Redis and set up session store
-initRedis()
-  .then(redisClient => {
-    if (redisClient) {
-      const RedisStore = require('connect-redis').default;
-      sessionConfig.store = new RedisStore({ client: redisClient });
-      console.log('✅ Redis session store configured');
-    } else {
-      console.log('⚠️ Using in-memory session store (Redis not available)');
-    }
-  })
-  .catch(err => {
-    console.error('Redis initialization error:', err.message);
-    console.log('⚠️  Using in-memory session store');
-  });
-
 app.use(session(sessionConfig));
 
 // Static files

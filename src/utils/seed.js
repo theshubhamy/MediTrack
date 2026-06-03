@@ -106,7 +106,6 @@ async function seed() {
         '💡 Tip: Make sure your database is running and check your .env file.',
       );
       console.error('   For local development, set DB_HOST=localhost');
-      console.error('   For Docker, set DB_HOST=postgres');
     }
     process.exit(1);
   }

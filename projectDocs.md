@@ -121,7 +121,6 @@ Upcoming capabilities:
 
 - Node.js 20+
 - PostgreSQL (or Neon database)
-- Redis (optional)
 
 ---
 
@@ -152,8 +151,6 @@ PORT=3301
 DATABASE_URL=postgresql://username:password@localhost:5432/meditrack
 
 SESSION_SECRET=your-secret-key
-
-REDIS_URL=redis://localhost:6379
 ```
 
 ---
