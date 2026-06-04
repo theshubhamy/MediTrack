@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Patient, Visit, User, Prescription } = require('../models');
+const { Patient, Visit, User, Prescription, Appointment } = require('../models');
 const {
   requireAuth,
   requireClinicAccess,
@@ -193,9 +193,61 @@ router.get('/:id', requireAuth, requireClinicAccess, async (req, res) => {
       });
     }
 
+    // Query appointments for patient
+    const appointments = await Appointment.findAll({
+      where: { patientId: id, clinicId },
+      include: [
+        {
+          model: User,
+          as: 'doctor',
+          attributes: ['id', 'name'],
+        },
+      ],
+    });
+
+    // Create a unified timeline
+    const timeline = [];
+
+    // Add visits
+    patient.visits.forEach(visit => {
+      timeline.push({
+        type: 'VISIT',
+        id: visit.id,
+        date: visit.created_at || visit.createdAt,
+        title: `Consultation`,
+        doctorName: visit.doctor ? visit.doctor.name : 'Unknown Doctor',
+        diagnosis: visit.diagnosis,
+        symptoms: visit.symptoms,
+        notes: visit.notes,
+        prescription: visit.prescription,
+        nextVisitDate: visit.nextVisitDate,
+      });
+    });
+
+    // Add appointments
+    appointments.forEach(apt => {
+      timeline.push({
+        type: 'APPOINTMENT',
+        id: apt.id,
+        date: new Date(`${apt.appointmentDate}T${apt.appointmentTime || '00:00:00'}`),
+        title: `Appointment`,
+        doctorName: apt.doctor ? apt.doctor.name : 'Unknown Doctor',
+        reason: apt.reason,
+        notes: apt.notes,
+        status: apt.status,
+        appointmentDate: apt.appointmentDate,
+        appointmentTime: apt.appointmentTime,
+        duration: apt.duration,
+      });
+    });
+
+    // Sort timeline chronologically descending (newest first)
+    timeline.sort((a, b) => new Date(b.date) - new Date(a.date));
+
     res.render('patients/show', {
       title: `Patient: ${patient.name}`,
       patient,
+      timeline,
     });
   } catch (error) {
     console.error('Patient details error:', error);

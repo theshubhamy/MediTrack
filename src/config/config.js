@@ -28,7 +28,7 @@ const baseConfig = {
 module.exports = {
   development: {
     ...baseConfig,
-    logging: console.log,
+    logging: false,
   },
   production: {
     ...baseConfig,

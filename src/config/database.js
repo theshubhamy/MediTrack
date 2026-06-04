@@ -13,7 +13,7 @@ function createSequelize() {
       host: url.hostname,
       port: Number(url.port) || 5432,
       dialect: 'postgres',
-      logging: process.env.NODE_ENV === 'development' ? console.log : false,
+      logging: false,
       dialectOptions: {
         ssl: {
           require: true,

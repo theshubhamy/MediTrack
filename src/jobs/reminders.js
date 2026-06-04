@@ -1,44 +1,39 @@
-/**
- * Scheduled job for sending follow-up reminders
- * Run daily to check for upcoming visits
- */
 
 const cron = require('node-cron');
-const { Visit, Patient, Clinic, Appointment } = require('../models');
+const { Visit, Patient, Clinic, Appointment, User } = require('../models');
 const { Op } = require('sequelize');
+const { sendSMS, sendWhatsApp, sendEmail } = require('../utils/notification');
 
-/**
- * Send reminder for upcoming visits
- * This is a placeholder - implement actual SMS/WhatsApp sending logic
- */
 const sendVisitReminder = async (visit, patient) => {
-    // TODO: Implement actual reminder sending
-    // This could use Twilio, WhatsApp Business API, or similar service
-    console.log(`Reminder: Patient ${patient.name} has a visit scheduled for ${visit.nextVisitDate}`);
-
-    // Example structure:
-    // await sendSMS(patient.phone, `Reminder: You have an appointment on ${visit.nextVisitDate}`);
-    // or
-    // await sendWhatsApp(patient.phone, `Reminder: You have an appointment on ${visit.nextVisitDate}`);
+    const clinicName = visit.clinic ? visit.clinic.name : 'the clinic';
+    const message = `Reminder: Dear ${patient.name}, you have a follow-up visit scheduled for ${visit.nextVisitDate} at ${clinicName}.`;
+    
+    if (patient.phone) {
+        await sendSMS({ to: patient.phone, body: message });
+        await sendWhatsApp({ to: patient.phone, body: message });
+    }
 };
 
-/**
- * Send reminder for upcoming appointments
- */
 const sendAppointmentReminder = async (appointment, patient) => {
-    // TODO: Implement actual reminder sending
     const appointmentDateTime = `${appointment.appointmentDate} at ${appointment.appointmentTime}`;
-    console.log(`Appointment Reminder: Patient ${patient.name} has an appointment on ${appointmentDateTime}`);
+    const message = `Appointment Reminder: Dear ${patient.name}, you have an appointment scheduled for ${appointmentDateTime}.`;
 
-    // Mark reminder as sent
     appointment.reminderSent = true;
     appointment.reminderSentAt = new Date();
     await appointment.save();
 
-    // Example structure:
-    // await sendSMS(patient.phone, `Reminder: You have an appointment on ${appointmentDateTime}`);
-    // or
-    // await sendEmail(patient.email, 'Appointment Reminder', `You have an appointment on ${appointmentDateTime}`);
+    if (patient.phone) {
+        await sendSMS({ to: patient.phone, body: message });
+        await sendWhatsApp({ to: patient.phone, body: message });
+    }
+
+    if (patient.email) {
+        await sendEmail({
+            to: patient.email,
+            subject: 'Upcoming Appointment Reminder',
+            body: message,
+        });
+    }
 };
 
 /**
@@ -114,7 +109,6 @@ const checkUpcomingAppointments = async () => {
             }],
         });
 
-        console.log(`Found ${upcomingAppointments.length} upcoming appointments for reminders`);
 
         for (const appointment of upcomingAppointments) {
             if (appointment.patient.phone || appointment.patient.email) {
@@ -127,8 +121,105 @@ const checkUpcomingAppointments = async () => {
 };
 
 /**
+ * Check for past scheduled appointments and mark them as NO_SHOW (missed)
+ * Runs daily at 11 PM
+ */
+const recoverMissedAppointments = async () => {
+    try {
+        console.log('🔄 Running missed appointment recovery...');
+        const todayStr = new Date().toISOString().split('T')[0];
+        
+        const missedAppointments = await Appointment.findAll({
+            where: {
+                appointmentDate: {
+                    [Op.lt]: todayStr,
+                },
+                status: {
+                    [Op.in]: ['SCHEDULED', 'CONFIRMED'],
+                },
+            },
+            include: [
+                { model: Patient, as: 'patient' },
+                { model: User, as: 'doctor', attributes: ['name'] }
+            ],
+        });
+
+        console.log(`Found ${missedAppointments.length} missed appointments to recover`);
+
+        for (const apt of missedAppointments) {
+            apt.status = 'NO_SHOW';
+            await apt.save();
+
+            if (apt.patient && (apt.patient.phone || apt.patient.email)) {
+                const docName = apt.doctor ? apt.doctor.name : 'the doctor';
+                const message = `Hello ${apt.patient.name}, we missed you at your appointment with Dr. ${docName} on ${apt.appointmentDate}. Please reply or call us to reschedule your checkup!`;
+                
+                if (apt.patient.phone) {
+                    await sendSMS({ to: apt.patient.phone, body: message });
+                    await sendWhatsApp({ to: apt.patient.phone, body: message });
+                }
+                if (apt.patient.email) {
+                    await sendEmail({
+                        to: apt.patient.email,
+                        subject: 'We missed you! Reschedule your appointment',
+                        body: message,
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error recovering missed appointments:', error);
+    }
+};
+
+/**
+ * Identify inactive patients (no visit or appointment in 6 months) and send recurring checkup reminders
+ * Runs weekly on Sundays at 10 AM
+ */
+const checkInactivePatients = async () => {
+    try {
+        console.log('🔄 Running recurring checkup check for inactive patients...');
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setDate(sixMonthsAgo.getDate() - 180);
+
+        const patients = await Patient.findAll();
+        
+        for (const patient of patients) {
+            const recentVisit = await Visit.findOne({
+                where: {
+                    patientId: patient.id,
+                    created_at: {
+                        [Op.gte]: sixMonthsAgo
+                    }
+                }
+            });
+
+            const recentApt = await Appointment.findOne({
+                where: {
+                    patientId: patient.id,
+                    appointmentDate: {
+                        [Op.gte]: sixMonthsAgo.toISOString().split('T')[0]
+                    }
+                }
+            });
+
+            if (!recentVisit && !recentApt) {
+                const message = `Hi ${patient.name}, it has been over 6 months since your last visit. Regular checkups are important for your ongoing health. Would you like to schedule a routine consultation?`;
+                
+                if (patient.phone) {
+                    await sendSMS({ to: patient.phone, body: message });
+                    await sendWhatsApp({ to: patient.phone, body: message });
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error checking inactive patients:', error);
+    }
+};
+
+/**
  * Schedule the reminder jobs
- * Runs daily at 9:00 AM and 6:00 PM
+ * Runs daily at 9:00 AM, 6:00 PM, 11:00 PM, and Sundays at 10:00 AM
  */
 const startReminderJob = () => {
     // Cron expression: 0 9 * * * (9 AM every day) - for visits
@@ -143,11 +234,23 @@ const startReminderJob = () => {
         await checkUpcomingAppointments();
     });
 
-    console.log('✅ Reminder jobs scheduled (visits at 9 AM, appointments at 9 AM and 6 PM)');
+    // Cron expression: 0 23 * * * (11 PM every day) - for missed appointment recovery
+    cron.schedule('0 23 * * *', async () => {
+        console.log('Running missed appointment recovery job...');
+        await recoverMissedAppointments();
+    });
+
+    // Cron expression: 0 10 * * 0 (10 AM every Sunday) - for inactive patient checkups
+    cron.schedule('0 10 * * 0', async () => {
+        console.log('Running inactive patient checkup check...');
+        await checkInactivePatients();
+    });
 };
 
 module.exports = {
     startReminderJob,
     checkUpcomingVisits,
     checkUpcomingAppointments,
+    recoverMissedAppointments,
+    checkInactivePatients,
 };

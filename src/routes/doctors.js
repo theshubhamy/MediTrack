@@ -8,6 +8,10 @@ const {
 } = require('../middlewares/auth');
 const { ROLES, canManageDoctors } = require('../utils/roles');
 const { Op } = require('sequelize');
+const bcrypt = require('bcrypt');
+const { generatePassword, isValidEmail } = require('../utils/helpers');
+const { logActivity } = require('../utils/activityLogger');
+const { sendEmail } = require('../utils/notification');
 
 /**
  * GET /doctors
@@ -37,6 +41,7 @@ router.get('/', requireAuth, requireClinicAccess, async (req, res) => {
       canManageDoctors: canManageDoctors(req.session.user),
       currentUserId: req.session.user.id,
       userRole: req.session.user.role,
+      success: req.query.success,
     });
   } catch (error) {
     console.error('Doctors list error:', error);
@@ -75,18 +80,88 @@ router.post(
   requireRole('CLINIC_ADMIN'),
   async (req, res) => {
     try {
-      // TODO: Implement doctor invitation logic
-      // This would typically involve:
-      // 1. Creating a user account
-      // 2. Sending invitation email
-      // 3. Setting up temporary password
+      const clinicId = req.session.user.clinicId;
+      const { name, email, phone } = req.body;
 
-      res.redirect('/doctors');
+      if (!name || !email) {
+        return res.render('doctors/invite', {
+          title: 'Invite Doctor',
+          error: 'Name and email are required fields.',
+          name: name || '',
+          email: email || '',
+          phone: phone || '',
+        });
+      }
+
+      if (!isValidEmail(email)) {
+        return res.render('doctors/invite', {
+          title: 'Invite Doctor',
+          error: 'Please enter a valid email address.',
+          name,
+          email,
+          phone,
+        });
+      }
+
+      // Check if email already exists
+      const existingUser = await User.findOne({ where: { email } });
+      if (existingUser) {
+        return res.render('doctors/invite', {
+          title: 'Invite Doctor',
+          error: 'A user with this email address already exists.',
+          name,
+          email,
+          phone,
+        });
+      }
+
+      // Generate temporary password
+      const tempPassword = generatePassword(10);
+      const saltRounds = 10;
+      const passwordHash = await bcrypt.hash(tempPassword, saltRounds);
+
+      // Create DOCTOR user
+      const doctor = await User.create({
+        clinicId,
+        name,
+        email,
+        phone: phone || null,
+        passwordHash,
+        role: 'DOCTOR',
+        status: 'ACTIVE',
+      });
+
+      // Log activity
+      await logActivity({
+        action: 'DOCTOR_INVITED',
+        entityType: 'User',
+        entityId: doctor.id,
+        description: `Doctor ${name} invited by Admin`,
+        userId: req.session.user.id,
+        clinicId,
+        req,
+      });
+
+      // Send invitation email via notification helper
+      await sendEmail({
+        to: email,
+        subject: 'Welcome to MediTrack AI - Invitation to Join',
+        body: `Hello Dr. ${name},\n\nYou have been invited to join the MediTrack AI clinic operations platform.\n\nYour temporary credentials are:\nEmail: ${email}\nPassword: ${tempPassword}\n\nPlease login and change your password at: http://localhost:3000/login\n\nBest regards,\nMediTrack Team`,
+      });
+
+      // Redirect with success message including temporary password so admin can copy it
+      const successMessage = encodeURIComponent(
+        `Doctor ${name} successfully invited! Temporary password: ${tempPassword}`
+      );
+      res.redirect(`/doctors?success=${successMessage}`);
     } catch (error) {
       console.error('Invite doctor error:', error);
       res.render('doctors/invite', {
         title: 'Invite Doctor',
         error: 'Failed to invite doctor. Please try again.',
+        name: req.body.name || '',
+        email: req.body.email || '',
+        phone: req.body.phone || '',
       });
     }
   },

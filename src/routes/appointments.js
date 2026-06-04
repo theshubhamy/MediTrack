@@ -4,6 +4,7 @@ const { Appointment, Patient, User, DoctorAvailability } = require('../models');
 const { requireAuth, requireClinicAccess } = require('../middlewares/auth');
 const { ROLES, canViewAllData } = require('../utils/roles');
 const { Op } = require('sequelize');
+const { sendSMS, sendWhatsApp, sendEmail } = require('../utils/notification');
 
 /**
  * GET /appointments
@@ -420,6 +421,29 @@ router.post('/', requireAuth, requireClinicAccess, async (req, res) => {
       status: 'SCHEDULED',
     });
 
+    // Send Confirmation Notifications
+    try {
+      const patient = await Patient.findByPk(patientId);
+      const doctor = await User.findByPk(doctorId);
+      if (patient) {
+        const message = `Appointment Confirmed: Dear ${patient.name}, your appointment with Dr. ${doctor ? doctor.name : 'the doctor'} is scheduled for ${appointmentDate} at ${appointmentTime}.`;
+        
+        if (patient.phone) {
+          await sendSMS({ to: patient.phone, body: message });
+          await sendWhatsApp({ to: patient.phone, body: message });
+        }
+        if (patient.email) {
+          await sendEmail({
+            to: patient.email,
+            subject: 'Appointment Scheduled Confirmation',
+            body: message,
+          });
+        }
+      }
+    } catch (notifError) {
+      console.error('Failed to send appointment confirmation notifications:', notifError);
+    }
+
     res.redirect(`/appointments/${appointment.id}`);
   } catch (error) {
     console.error('Create appointment error:', error);
@@ -513,6 +537,29 @@ router.post('/:id/status', requireAuth, requireClinicAccess, async (req, res) =>
     appointment.status = status;
     await appointment.save();
 
+    // Send Status Update Notifications
+    try {
+      const patient = await Patient.findByPk(appointment.patientId);
+      const doctor = await User.findByPk(appointment.doctorId);
+      if (patient) {
+        const message = `Appointment Status Updated: Dear ${patient.name}, the status of your appointment with Dr. ${doctor ? doctor.name : 'the doctor'} scheduled for ${appointment.appointmentDate} at ${appointment.appointmentTime} has been updated to "${status}".`;
+        
+        if (patient.phone) {
+          await sendSMS({ to: patient.phone, body: message });
+          await sendWhatsApp({ to: patient.phone, body: message });
+        }
+        if (patient.email) {
+          await sendEmail({
+            to: patient.email,
+            subject: 'Appointment Status Updated',
+            body: message,
+          });
+        }
+      }
+    } catch (notifError) {
+      console.error('Failed to send appointment status update notifications:', notifError);
+    }
+
     res.redirect(`/appointments/${appointment.id}`);
   } catch (error) {
     console.error('Update status error:', error);
@@ -542,6 +589,29 @@ router.post('/:id/delete', requireAuth, requireClinicAccess, async (req, res) =>
     // Soft delete by changing status to CANCELLED
     appointment.status = 'CANCELLED';
     await appointment.save();
+
+    // Send Cancellation Notifications
+    try {
+      const patient = await Patient.findByPk(appointment.patientId);
+      const doctor = await User.findByPk(appointment.doctorId);
+      if (patient) {
+        const message = `Appointment Cancelled: Dear ${patient.name}, your appointment with Dr. ${doctor ? doctor.name : 'the doctor'} scheduled for ${appointment.appointmentDate} at ${appointment.appointmentTime} has been cancelled.`;
+        
+        if (patient.phone) {
+          await sendSMS({ to: patient.phone, body: message });
+          await sendWhatsApp({ to: patient.phone, body: message });
+        }
+        if (patient.email) {
+          await sendEmail({
+            to: patient.email,
+            subject: 'Appointment Cancelled Notice',
+            body: message,
+          });
+        }
+      }
+    } catch (notifError) {
+      console.error('Failed to send appointment cancellation notifications:', notifError);
+    }
 
     res.redirect('/appointments');
   } catch (error) {
